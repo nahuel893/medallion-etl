@@ -37,7 +37,6 @@ GRANT USAGE, CREATE ON SCHEMA bronze TO :etl_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA bronze TO :etl_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA bronze GRANT ALL PRIVILEGES ON TABLES TO :etl_user;
 
-
 CREATE TABLE IF NOT EXISTS bronze.raw_sales (
     id SERIAL PRIMARY KEY,
     ingestion_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -105,118 +104,129 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA silver GRANT ALL PRIVILEGES ON TABLES TO :etl
 -- ==========================================
 
 -- Tabla de líneas de venta (fact table desnormalizada)
+-- Refleja 100% del JSONB menos columnas descartadas por decisión de negocio
 CREATE TABLE IF NOT EXISTS silver.fact_ventas (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     bronze_id INTEGER REFERENCES bronze.raw_sales(id),
 
-    -- Identificación documento
+    -- === IDENTIFICACIÓN DOCUMENTO ===
     id_empresa INTEGER NOT NULL,
-    ds_empresa VARCHAR(100),
     id_documento VARCHAR(20) NOT NULL,
-    ds_documento VARCHAR(100),
     letra CHAR(1),
     serie INTEGER,
     nro_doc INTEGER NOT NULL,
     anulado BOOLEAN DEFAULT FALSE,
 
-    -- Fechas
+    -- === FECHAS ===
     fecha_comprobante DATE NOT NULL,
     fecha_alta DATE,
     fecha_pedido DATE,
     fecha_entrega DATE,
     fecha_vencimiento DATE,
     fecha_caja DATE,
+    fecha_anulacion DATE,
+    fecha_pago DATE,
+    fecha_liquidacion DATE,
+    fecha_asiento_contable DATE,
 
-    -- Organización
+    -- === ORGANIZACIÓN ===
     id_sucursal INTEGER,
     ds_sucursal VARCHAR(100),
     id_deposito INTEGER,
     ds_deposito VARCHAR(100),
+    id_caja INTEGER,
+    cajero VARCHAR(100),
+    id_centro_costo INTEGER,
 
-    -- Personal
+    -- === PERSONAL ===
     id_vendedor INTEGER,
     ds_vendedor VARCHAR(100),
     id_supervisor INTEGER,
     ds_supervisor VARCHAR(100),
     id_gerente INTEGER,
     ds_gerente VARCHAR(100),
+    id_fuerza_ventas INTEGER,
+    ds_fuerza_ventas VARCHAR(100),
+    usuario_alta VARCHAR(100),
 
-    -- Cliente
+    -- === CLIENTE ===
     id_cliente INTEGER NOT NULL,
     nombre_cliente VARCHAR(200),
-    domicilio_cliente VARCHAR(300),
-    codigo_postal VARCHAR(20),
-    id_localidad INTEGER,
-    ds_localidad VARCHAR(100),
-    id_provincia VARCHAR(10),
-    ds_provincia VARCHAR(100),
+    linea_credito VARCHAR(200),
 
-    -- Pago
-    id_tipo_pago INTEGER,
-    ds_tipo_pago VARCHAR(50),
-
-    -- Segmentación comercial
-    id_negocio INTEGER,
-    ds_negocio VARCHAR(100),
+    -- === SEGMENTACIÓN COMERCIAL ===
     id_canal_mkt INTEGER,
     ds_canal_mkt VARCHAR(100),
     id_segmento_mkt INTEGER,
     ds_segmento_mkt VARCHAR(100),
-    id_area INTEGER,
-    ds_area VARCHAR(100),
+    id_subcanal_mkt INTEGER,
+    ds_subcanal_mkt VARCHAR(100),
 
-    -- Línea de venta (detalle)
-    id_linea INTEGER NOT NULL,
+    -- === LOGÍSTICA ===
+    id_fletero_carga INTEGER,
+    ds_fletero_carga VARCHAR(100),
+    planilla_carga VARCHAR(50),
+
+    -- === LÍNEA DE VENTA ===
     id_articulo INTEGER NOT NULL,
     ds_articulo VARCHAR(200),
-    id_concepto INTEGER,
-    ds_concepto VARCHAR(100),
+    presentacion_articulo VARCHAR(50),
     es_combo BOOLEAN DEFAULT FALSE,
     id_combo INTEGER,
+    id_pedido INTEGER,
+    id_origen VARCHAR(150),
+    origen VARCHAR(50),
+    acciones VARCHAR(100),
 
-    -- Artículo estadístico
-    id_articulo_estadistico INTEGER,
-    ds_articulo_estadistico VARCHAR(200),
-    presentacion_articulo VARCHAR(50),
-
-    -- Cantidades
-    cantidad_solicitada NUMERIC(15,4),
-    unidades_solicitadas NUMERIC(15,4),
+    -- === CANTIDADES ===
     cantidades_con_cargo NUMERIC(15,4),
     cantidades_sin_cargo NUMERIC(15,4),
     cantidades_total NUMERIC(15,4),
     cantidades_rechazo NUMERIC(15,4),
-    peso NUMERIC(15,4),
-    peso_total NUMERIC(15,4),
 
-    -- Precios
+    -- === PRECIOS ===
     precio_unitario_bruto NUMERIC(15,4),
-    bonificacion NUMERIC(8,4),
     precio_unitario_neto NUMERIC(15,4),
+    bonificacion NUMERIC(8,4),
+    precio_compra_bruto NUMERIC(15,4),
+    precio_compra_neto NUMERIC(15,4),
 
-    -- Subtotales línea
+    -- === SUBTOTALES ===
     subtotal_bruto NUMERIC(15,4),
     subtotal_bonificado NUMERIC(15,4),
     subtotal_neto NUMERIC(15,4),
     subtotal_final NUMERIC(15,4),
 
-    -- Impuestos
+    -- === IMPUESTOS ===
     iva21 NUMERIC(15,4),
     iva27 NUMERIC(15,4),
     iva105 NUMERIC(15,4),
+    iva2 NUMERIC(15,4),
     internos NUMERIC(15,4),
     per3337 NUMERIC(15,4),
     percepcion212 NUMERIC(15,4),
     percepcion_iibb NUMERIC(15,4),
+    pers_iibb_d NUMERIC(15,4),
+    pers_iibb_r NUMERIC(15,4),
+    cod_prov_iibb VARCHAR(10),
 
-    -- Trade spend
-    totradspend NUMERIC(15,4),
+    -- === CONTABILIDAD ===
+    cod_cuenta_contable VARCHAR(50),
+    ds_cuenta_contable VARCHAR(100),
+    nro_asiento_contable INTEGER,
+    nro_plan_contable INTEGER,
+    id_liquidacion INTEGER,
 
-    -- Metadata
-    origen VARCHAR(50),
+    -- === PROVEEDOR ===
+    proveedor VARCHAR(100),
+    fvig_pcompra DATE,
+
+    -- === METADATA / RECHAZO ===
     id_rechazo INTEGER,
-    ds_rechazo VARCHAR(100)
+    ds_rechazo VARCHAR(100),
+    informado BOOLEAN,
+    regimen_fiscal VARCHAR(50)
 );
 
 -- Índices para consultas frecuentes

@@ -10,6 +10,17 @@ class FactVentas(Base):
     """
     Modelo para la tabla de hechos de ventas (líneas de venta parseadas).
     Cada registro representa una línea de un comprobante de venta.
+
+    JSONB keys excluidas (por decisión de negocio):
+    - dsEmpresa, dsDocumento, idMovComercial, dsMovComercial
+    - domicilioCliente, codigoPostal, dsLocalidad, idProvincia, dsProvincia
+    - tipoConstribuyente, dsTipoConstribuyente, idTipoPago, dsTipoPago
+    - idAgrupacion, dsAgrupacion, idArea, dsArea
+    - tradespend* (todos), totradspend
+    - numerosserie, numerosactivo, cuentayorden, codprovcyo, nrorendcyo
+    - idTipoCambio, dsTipoCambio, cfdiEmitido, numeracionFiscal
+    - idConcepto, dsConcepto, idArticuloEstadistico, dsArticuloEstadistico
+    - cantidadPorPallets, peso, pesoTotal, tipocambio, motivocambio, descmotcambio
     """
     __tablename__ = 'fact_ventas'
     __table_args__ = (
@@ -26,113 +37,123 @@ class FactVentas(Base):
     processed_at = Column(DateTime, server_default=func.now())
     bronze_id = Column(Integer, ForeignKey('bronze.raw_sales.id'))
 
-    # Identificación documento
-    id_empresa = Column(Integer, nullable=False)
-    ds_empresa = Column(String(100))
-    id_documento = Column(String(20), nullable=False)
-    ds_documento = Column(String(100))
-    letra = Column(String(1))
-    serie = Column(Integer)
-    nro_doc = Column(Integer, nullable=False)
-    anulado = Column(Boolean, default=False)
+    # === IDENTIFICACIÓN DOCUMENTO ===
+    id_empresa = Column(Integer, nullable=False)              # idEmpresa
+    id_documento = Column(String(20), nullable=False)         # idDocumento
+    letra = Column(String(1))                                 # letra
+    serie = Column(Integer)                                   # serie
+    nro_doc = Column(Integer, nullable=False)                 # nrodoc
+    anulado = Column(Boolean, default=False)                  # anulado
 
-    # Fechas
-    fecha_comprobante = Column(Date, nullable=False)
-    fecha_alta = Column(Date)
-    fecha_pedido = Column(Date)
-    fecha_entrega = Column(Date)
-    fecha_vencimiento = Column(Date)
-    fecha_caja = Column(Date)
+    # === FECHAS ===
+    fecha_comprobante = Column(Date, nullable=False)          # fechaComprobate
+    fecha_alta = Column(Date)                                 # fechaAlta
+    fecha_pedido = Column(Date)                               # fechaPedido
+    fecha_entrega = Column(Date)                              # fechaEntrega
+    fecha_vencimiento = Column(Date)                          # fechaVencimiento
+    fecha_caja = Column(Date)                                 # fechaCaja
+    fecha_anulacion = Column(Date)                            # fechaAnulacion
+    fecha_pago = Column(Date)                                 # fechaPago
+    fecha_liquidacion = Column(Date)                          # fechaLiquidacion
+    fecha_asiento_contable = Column(Date)                     # fechaAsientoContable
 
-    # Organización
-    id_sucursal = Column(Integer)
-    ds_sucursal = Column(String(100))
-    id_deposito = Column(Integer)
-    ds_deposito = Column(String(100))
+    # === ORGANIZACIÓN ===
+    id_sucursal = Column(Integer)                             # idSucursal
+    ds_sucursal = Column(String(100))                         # dsSucursal
+    id_deposito = Column(Integer)                             # idDeposito
+    ds_deposito = Column(String(100))                         # dsDeposito
+    id_caja = Column(Integer)                                 # idCaja
+    cajero = Column(String(100))                              # cajero
+    id_centro_costo = Column(Integer)                         # idCentroCosto
 
-    # Personal
-    id_vendedor = Column(Integer)
-    ds_vendedor = Column(String(100))
-    id_supervisor = Column(Integer)
-    ds_supervisor = Column(String(100))
-    id_gerente = Column(Integer)
-    ds_gerente = Column(String(100))
+    # === PERSONAL ===
+    id_vendedor = Column(Integer)                             # idVendedor
+    ds_vendedor = Column(String(100))                         # dsVendedor
+    id_supervisor = Column(Integer)                           # idSupervisor
+    ds_supervisor = Column(String(100))                       # dsSupervisor
+    id_gerente = Column(Integer)                              # idGerente
+    ds_gerente = Column(String(100))                          # dsGerente
+    id_fuerza_ventas = Column(Integer)                        # idFuerzaVentas
+    ds_fuerza_ventas = Column(String(100))                    # dsFuerzaVentas
+    usuario_alta = Column(String(100))                        # usuarioAlta
 
-    # Cliente
-    id_cliente = Column(Integer, nullable=False)
-    nombre_cliente = Column(String(200))
-    domicilio_cliente = Column(String(300))
-    codigo_postal = Column(String(20))
-    id_localidad = Column(Integer)
-    ds_localidad = Column(String(100))
-    id_provincia = Column(String(10))
-    ds_provincia = Column(String(100))
+    # === CLIENTE ===
+    id_cliente = Column(Integer, nullable=False)              # idCliente
+    nombre_cliente = Column(String(200))                      # nombreCliente
+    linea_credito = Column(String(200))                       # lineaCredito
 
-    # Pago
-    id_tipo_pago = Column(Integer)
-    ds_tipo_pago = Column(String(50))
+    # === SEGMENTACIÓN COMERCIAL ===
+    id_canal_mkt = Column(Integer)                            # idCanalMkt
+    ds_canal_mkt = Column(String(100))                        # dsCanalMkt
+    id_segmento_mkt = Column(Integer)                         # idSegmentoMkt
+    ds_segmento_mkt = Column(String(100))                     # dsSegmentoMkt
+    id_subcanal_mkt = Column(Integer)                         # idSubcanalMkt
+    ds_subcanal_mkt = Column(String(100))                     # dsSubcanalMKT
 
-    # Segmentación comercial
-    id_negocio = Column(Integer)
-    ds_negocio = Column(String(100))
-    id_canal_mkt = Column(Integer)
-    ds_canal_mkt = Column(String(100))
-    id_segmento_mkt = Column(Integer)
-    ds_segmento_mkt = Column(String(100))
-    id_area = Column(Integer)
-    ds_area = Column(String(100))
+    # === LOGÍSTICA ===
+    id_fletero_carga = Column(Integer)                        # idFleteroCarga
+    ds_fletero_carga = Column(String(100))                    # dsFleteroCarga
+    planilla_carga = Column(String(50))                       # planillaCarga
 
-    # Línea de venta
-    id_linea = Column(Integer, nullable=False)
-    id_articulo = Column(Integer, nullable=False)
-    ds_articulo = Column(String(200))
-    id_concepto = Column(Integer)
-    ds_concepto = Column(String(100))
-    es_combo = Column(Boolean, default=False)
-    id_combo = Column(Integer)
+    # === LÍNEA DE VENTA ===
+    id_articulo = Column(Integer, nullable=False)             # idArticulo
+    ds_articulo = Column(String(200))                         # dsArticulo
+    presentacion_articulo = Column(String(50))                # presentacionArticulo
+    es_combo = Column(Boolean, default=False)                 # esCombo
+    id_combo = Column(Integer)                                # idCombo
+    id_pedido = Column(Integer)                               # idPedido
+    id_origen = Column(String(150))                           # idorigen
+    origen = Column(String(50))                               # origen
+    acciones = Column(String(200))                            # acciones
 
-    # Artículo estadístico
-    id_articulo_estadistico = Column(Integer)
-    ds_articulo_estadistico = Column(String(200))
-    presentacion_articulo = Column(String(50))
+    # === CANTIDADES ===
+    cantidades_con_cargo = Column(Numeric(15, 4))             # cantidadesCorCargo
+    cantidades_sin_cargo = Column(Numeric(15, 4))             # cantidadesSinCargo
+    cantidades_total = Column(Numeric(15, 4))                 # cantidadesTotal
+    cantidades_rechazo = Column(Numeric(15, 4))               # cantidadesRechazo
 
-    # Cantidades
-    cantidad_solicitada = Column(Numeric(15, 4))
-    unidades_solicitadas = Column(Numeric(15, 4))
-    cantidades_con_cargo = Column(Numeric(15, 4))
-    cantidades_sin_cargo = Column(Numeric(15, 4))
-    cantidades_total = Column(Numeric(15, 4))
-    cantidades_rechazo = Column(Numeric(15, 4))
-    peso = Column(Numeric(15, 4))
-    peso_total = Column(Numeric(15, 4))
+    # === PRECIOS ===
+    precio_unitario_bruto = Column(Numeric(15, 4))            # precioUnitarioBruto
+    precio_unitario_neto = Column(Numeric(15, 4))             # precioUnitarioNeto
+    bonificacion = Column(Numeric(8, 4))                      # bonificacion
+    precio_compra_bruto = Column(Numeric(15, 4))              # preciocomprabr
+    precio_compra_neto = Column(Numeric(15, 4))               # preciocomprant
 
-    # Precios
-    precio_unitario_bruto = Column(Numeric(15, 4))
-    bonificacion = Column(Numeric(8, 4))
-    precio_unitario_neto = Column(Numeric(15, 4))
+    # === SUBTOTALES ===
+    subtotal_bruto = Column(Numeric(15, 4))                   # subtotalBruto
+    subtotal_bonificado = Column(Numeric(15, 4))              # subtotalBonificado
+    subtotal_neto = Column(Numeric(15, 4))                    # subtotalNeto
+    subtotal_final = Column(Numeric(15, 4))                   # subtotalFinal
 
-    # Subtotales
-    subtotal_bruto = Column(Numeric(15, 4))
-    subtotal_bonificado = Column(Numeric(15, 4))
-    subtotal_neto = Column(Numeric(15, 4))
-    subtotal_final = Column(Numeric(15, 4))
+    # === IMPUESTOS ===
+    iva21 = Column(Numeric(15, 4))                            # iva21
+    iva27 = Column(Numeric(15, 4))                            # iva27
+    iva105 = Column(Numeric(15, 4))                           # iva105
+    iva2 = Column(Numeric(15, 4))                             # iva2
+    internos = Column(Numeric(15, 4))                         # internos
+    per3337 = Column(Numeric(15, 4))                          # per3337
+    percepcion212 = Column(Numeric(15, 4))                    # percepcion212
+    percepcion_iibb = Column(Numeric(15, 4))                  # percepcioniibb
+    pers_iibb_d = Column(Numeric(15, 4))                      # persiibbd
+    pers_iibb_r = Column(Numeric(15, 4))                      # persiibbr
+    cod_prov_iibb = Column(String(10))                        # codproviibb
 
-    # Impuestos
-    iva21 = Column(Numeric(15, 4))
-    iva27 = Column(Numeric(15, 4))
-    iva105 = Column(Numeric(15, 4))
-    internos = Column(Numeric(15, 4))
-    per3337 = Column(Numeric(15, 4))
-    percepcion212 = Column(Numeric(15, 4))
-    percepcion_iibb = Column(Numeric(15, 4))
+    # === CONTABILIDAD ===
+    cod_cuenta_contable = Column(String(50))                  # codCuentaContable
+    ds_cuenta_contable = Column(String(100))                  # dsCuentaContable
+    nro_asiento_contable = Column(Integer)                    # nroAsientoContable
+    nro_plan_contable = Column(Integer)                       # nroPlanContable
+    id_liquidacion = Column(Integer)                          # idLiquidacion
 
-    # Trade spend
-    totradspend = Column(Numeric(15, 4))
+    # === PROVEEDOR ===
+    proveedor = Column(String(100))                           # proveedor
+    fvig_pcompra = Column(Date)                               # fvigpcompra
 
-    # Metadata
-    origen = Column(String(50))
-    id_rechazo = Column(Integer)
-    ds_rechazo = Column(String(100))
+    # === METADATA / RECHAZO ===
+    id_rechazo = Column(Integer)                              # idRechazo
+    ds_rechazo = Column(String(100))                          # dsRechazo
+    informado = Column(Boolean)                               # informado
+    regimen_fiscal = Column(String(50))                       # regimenFiscal
 
     def __repr__(self):
-        return f"<FactVentas(id={self.id}, doc={self.id_documento}-{self.serie}-{self.nro_doc}, linea={self.id_linea})>"
+        return f"<FactVentas(id={self.id}, doc={self.id_documento}-{self.serie}-{self.nro_doc})>"

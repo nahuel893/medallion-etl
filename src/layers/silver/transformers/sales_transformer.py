@@ -1,48 +1,12 @@
 """
 Transformer para convertir datos crudos de ventas (bronze) a formato estructurado (silver).
+Utiliza INSERT INTO SELECT para máxima eficiencia (todo ejecutado en PostgreSQL).
 """
-from typing import Optional
-from psycopg2.extras import execute_values
 from database import engine
+from datetime import datetime
 
 
-def parse_date(value: str) -> Optional[str]:
-    """Convierte fecha a formato válido o None si es inválida."""
-    if not value or value in ('', '0001-01-01', None):
-        return None
-    return value
-
-
-def parse_bool(value) -> bool:
-    """Convierte valor a booleano."""
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.upper() in ('SI', 'YES', 'TRUE', '1', 'S')
-    return bool(value)
-
-
-def parse_numeric(value) -> Optional[float]:
-    """Convierte valor a numérico o None."""
-    if value is None or value == '':
-        return None
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return None
-
-
-def parse_int(value) -> Optional[int]:
-    """Convierte valor a entero o None."""
-    if value is None or value == '':
-        return None
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return None
-
-
-def transform_sales(fecha_desde: str = None, fecha_hasta: str = None, full_refresh: bool = False):
+def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
     """
     Transforma datos de bronze.raw_sales a silver.fact_ventas.
 
@@ -51,178 +15,216 @@ def transform_sales(fecha_desde: str = None, fecha_hasta: str = None, full_refre
         fecha_hasta: Fecha final para filtrar (opcional)
         full_refresh: Si True, elimina todos los datos de silver antes de insertar
     """
+    start_time = datetime.now()
+    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación...")
+
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
-        # Construir query de selección desde bronze
-        where_clauses = []
+        # Optimizaciones de PostgreSQL
+        cursor.execute("SET work_mem = '1GB'")
+        cursor.execute("SET maintenance_work_mem = '2GB'")
+
+        # Construir cláusula WHERE
+        where_conditions = []
         params = []
 
         if fecha_desde:
-            where_clauses.append("date_comprobante >= %s")
+            where_conditions.append("date_comprobante >= %s")
             params.append(fecha_desde)
         if fecha_hasta:
-            where_clauses.append("date_comprobante <= %s")
+            where_conditions.append("date_comprobante <= %s")
             params.append(fecha_hasta)
 
-        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
 
-        # Si es full refresh, eliminar todo. Si no, eliminar solo el rango de fechas
+        # DELETE según el modo
+        delete_start = datetime.now()
         if full_refresh:
-            print("Full refresh: eliminando todos los datos de silver.fact_ventas...")
+            print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando todos los datos de silver.fact_ventas...")
             cursor.execute("DELETE FROM silver.fact_ventas")
         elif fecha_desde and fecha_hasta:
-            print(f"Eliminando datos existentes en silver para el rango {fecha_desde} - {fecha_hasta}...")
+            print(f"[{delete_start.strftime('%H:%M:%S')}] Eliminando datos existentes en silver para el rango {fecha_desde} - {fecha_hasta}...")
             cursor.execute(
                 "DELETE FROM silver.fact_ventas WHERE fecha_comprobante >= %s AND fecha_comprobante <= %s",
                 (fecha_desde, fecha_hasta)
             )
 
-        # Obtener datos de bronze
-        query = f"""
-            SELECT id, data_raw
-            FROM bronze.raw_sales
-            {where_sql}
-            ORDER BY date_comprobante
-        """
-        cursor.execute(query, params if params else None)
-        rows = cursor.fetchall()
+        if full_refresh or (fecha_desde and fecha_hasta):
+            delete_time = (datetime.now() - delete_start).total_seconds()
+            print(f"    ✓ DELETE completado en {delete_time:.2f}s")
 
-        if not rows:
+        # Contar registros a procesar
+        count_start = datetime.now()
+        count_query = f"SELECT COUNT(*) FROM bronze.raw_sales {where_clause}"
+        cursor.execute(count_query, params if params else None)
+        total = cursor.fetchone()[0]
+        count_time = (datetime.now() - count_start).total_seconds()
+
+        if total == 0:
             print("Sin datos para procesar en bronze.raw_sales")
+            cursor.close()
             return
 
-        print(f"Procesando {len(rows)} registros de bronze...")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Encontrados {total:,} registros (COUNT en {count_time:.2f}s)")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
 
-        # Parsear y preparar datos para silver
-        silver_data = []
-        for bronze_id, data in rows:
-            silver_data.append((
-                bronze_id,
-                # Identificación documento
-                data.get('idEmpresa'),
-                data.get('dsEmpresa'),
-                data.get('idDocumento'),
-                data.get('dsDocumento'),
-                data.get('letra'),
-                parse_int(data.get('serie')),
-                data.get('nrodoc'),
-                parse_bool(data.get('anulado')),
-                # Fechas
-                parse_date(data.get('fechaComprobate')),
-                parse_date(data.get('fechaAlta')),
-                parse_date(data.get('fechaPedido')),
-                parse_date(data.get('fechaEntrega')),
-                parse_date(data.get('fechaVencimiento')),
-                parse_date(data.get('fechaCaja')),
-                # Organización
-                parse_int(data.get('idSucursal')),
-                data.get('dsSucursal'),
-                parse_int(data.get('idDeposito')),
-                data.get('dsDeposito'),
-                # Personal
-                parse_int(data.get('idVendedor')),
-                data.get('dsVendedor'),
-                parse_int(data.get('idSupervisor')),
-                data.get('dsSupervisor'),
-                parse_int(data.get('idGerente')),
-                data.get('dsGerente'),
-                # Cliente
-                data.get('idCliente'),
-                data.get('nombreCliente'),
-                data.get('domicilioCliente'),
-                str(data.get('codigoPostal', '')) if data.get('codigoPostal') else None,
-                parse_int(data.get('idLocalidad')),
-                data.get('dsLocalidad'),
-                data.get('idProvincia'),
-                data.get('dsProvincia'),
-                # Pago
-                parse_int(data.get('idTipoPago')),
-                data.get('dsTipoPago'),
-                # Segmentación comercial
-                parse_int(data.get('idNegocio')),
-                data.get('dsNegocio'),
-                parse_int(data.get('idCanalMkt')),
-                data.get('dsCanalMkt'),
-                parse_int(data.get('idSegmentoMkt')),
-                data.get('dsSegmentoMkt'),
-                parse_int(data.get('idArea')),
-                data.get('dsArea'),
-                # Línea de venta
-                data.get('idLinea'),
-                data.get('idArticulo'),
-                data.get('dsArticulo'),
-                parse_int(data.get('idConcepto')),
-                data.get('dsConcepto'),
-                parse_bool(data.get('esCombo')),
-                parse_int(data.get('idCombo')),
-                # Artículo estadístico
-                parse_int(data.get('idArticuloEstadistico')),
-                data.get('dsArticuloEstadistico'),
-                str(data.get('presentacionArticulo', '')) if data.get('presentacionArticulo') else None,
-                # Cantidades
-                parse_numeric(data.get('cantidadSolicitada')),
-                parse_numeric(data.get('unidadesSolicitadas')),
-                parse_numeric(data.get('cantidadesCorCargo')),
-                parse_numeric(data.get('cantidadesSinCargo')),
-                parse_numeric(data.get('cantidadesTotal')),
-                parse_numeric(data.get('cantidadesRechazo')),
-                parse_numeric(data.get('peso')),
-                parse_numeric(data.get('pesoTotal')),
-                # Precios
-                parse_numeric(data.get('precioUnitarioBruto')),
-                parse_numeric(data.get('bonificacion')),
-                parse_numeric(data.get('precioUnitarioNeto')),
-                # Subtotales
-                parse_numeric(data.get('subtotalBruto')),
-                parse_numeric(data.get('subtotalBonificado')),
-                parse_numeric(data.get('subtotalNeto')),
-                parse_numeric(data.get('subtotalFinal')),
-                # Impuestos
-                parse_numeric(data.get('iva21')),
-                parse_numeric(data.get('iva27')),
-                parse_numeric(data.get('iva105')),
-                parse_numeric(data.get('internos')),
-                parse_numeric(data.get('per3337')),
-                parse_numeric(data.get('percepcion212')),
-                parse_numeric(data.get('percepcioniibb')),
-                # Trade spend
-                parse_numeric(data.get('totradspend')),
-                # Metadata
-                data.get('origen'),
-                parse_int(data.get('idRechazo')),
-                data.get('dsRechazo'),
-            ))
-
-        # Insertar en silver
-        insert_query = """
+        # INSERT INTO SELECT (todo en PostgreSQL, sin pasar por Python)
+        insert_query = f"""
             INSERT INTO silver.fact_ventas (
                 bronze_id,
-                id_empresa, ds_empresa, id_documento, ds_documento, letra, serie, nro_doc, anulado,
+                id_empresa, id_documento, letra, serie, nro_doc, anulado,
                 fecha_comprobante, fecha_alta, fecha_pedido, fecha_entrega, fecha_vencimiento, fecha_caja,
-                id_sucursal, ds_sucursal, id_deposito, ds_deposito,
+                fecha_anulacion, fecha_pago, fecha_liquidacion, fecha_asiento_contable,
+                id_sucursal, ds_sucursal, id_deposito, ds_deposito, id_caja, cajero, id_centro_costo,
                 id_vendedor, ds_vendedor, id_supervisor, ds_supervisor, id_gerente, ds_gerente,
-                id_cliente, nombre_cliente, domicilio_cliente, codigo_postal, id_localidad, ds_localidad, id_provincia, ds_provincia,
-                id_tipo_pago, ds_tipo_pago,
-                id_negocio, ds_negocio, id_canal_mkt, ds_canal_mkt, id_segmento_mkt, ds_segmento_mkt, id_area, ds_area,
-                id_linea, id_articulo, ds_articulo, id_concepto, ds_concepto, es_combo, id_combo,
-                id_articulo_estadistico, ds_articulo_estadistico, presentacion_articulo,
-                cantidad_solicitada, unidades_solicitadas, cantidades_con_cargo, cantidades_sin_cargo, cantidades_total, cantidades_rechazo, peso, peso_total,
-                precio_unitario_bruto, bonificacion, precio_unitario_neto,
+                id_fuerza_ventas, ds_fuerza_ventas, usuario_alta,
+                id_cliente, nombre_cliente, linea_credito,
+                id_canal_mkt, ds_canal_mkt, id_segmento_mkt, ds_segmento_mkt,
+                id_subcanal_mkt, ds_subcanal_mkt,
+                id_fletero_carga, ds_fletero_carga, planilla_carga,
+                id_articulo, ds_articulo, presentacion_articulo, es_combo, id_combo,
+                id_pedido, id_origen, origen, acciones,
+                cantidades_con_cargo, cantidades_sin_cargo,
+                cantidades_total, cantidades_rechazo,
+                precio_unitario_bruto, precio_unitario_neto, bonificacion, precio_compra_bruto, precio_compra_neto,
                 subtotal_bruto, subtotal_bonificado, subtotal_neto, subtotal_final,
-                iva21, iva27, iva105, internos, per3337, percepcion212, percepcion_iibb,
-                totradspend,
-                origen, id_rechazo, ds_rechazo
-            ) VALUES %s
+                iva21, iva27, iva105, iva2, internos, per3337, percepcion212, percepcion_iibb,
+                pers_iibb_d, pers_iibb_r, cod_prov_iibb,
+                cod_cuenta_contable, ds_cuenta_contable, nro_asiento_contable, nro_plan_contable, id_liquidacion,
+                proveedor, fvig_pcompra,
+                id_rechazo, ds_rechazo, informado, regimen_fiscal
+            )
+            SELECT
+                id,
+                -- === IDENTIFICACIÓN DOCUMENTO ===
+                NULLIF(data_raw->>'idEmpresa', '')::integer,
+                data_raw->>'idDocumento',
+                data_raw->>'letra',
+                NULLIF(data_raw->>'serie', '')::integer,
+                NULLIF(data_raw->>'nrodoc', '')::integer,
+                UPPER(data_raw->>'anulado') = 'SI',
+                -- === FECHAS ===
+                NULLIF(NULLIF(data_raw->>'fechaComprobate', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaAlta', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaPedido', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaEntrega', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaVencimiento', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaCaja', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaAnulacion', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaPago', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaLiquidacion', ''), '0001-01-01')::date,
+                NULLIF(NULLIF(data_raw->>'fechaAsientoContable', ''), '0001-01-01')::date,
+                -- === ORGANIZACIÓN ===
+                NULLIF(data_raw->>'idSucursal', '')::integer,
+                data_raw->>'dsSucursal',
+                NULLIF(data_raw->>'idDeposito', '')::integer,
+                data_raw->>'dsDeposito',
+                NULLIF(data_raw->>'idCaja', '')::integer,
+                data_raw->>'cajero',
+                NULLIF(data_raw->>'idCentroCosto', '')::integer,
+                -- === PERSONAL ===
+                NULLIF(data_raw->>'idVendedor', '')::integer,
+                data_raw->>'dsVendedor',
+                NULLIF(data_raw->>'idSupervisor', '')::integer,
+                data_raw->>'dsSupervisor',
+                NULLIF(data_raw->>'idGerente', '')::integer,
+                data_raw->>'dsGerente',
+                NULLIF(data_raw->>'idFuerzaVentas', '')::integer,
+                data_raw->>'dsFuerzaVentas',
+                data_raw->>'usuarioAlta',
+                -- === CLIENTE ===
+                NULLIF(data_raw->>'idCliente', '')::integer,
+                data_raw->>'nombreCliente',
+                data_raw->>'lineaCredito',
+                -- === SEGMENTACIÓN COMERCIAL ===
+                NULLIF(data_raw->>'idCanalMkt', '')::integer,
+                data_raw->>'dsCanalMkt',
+                NULLIF(data_raw->>'idSegmentoMkt', '')::integer,
+                data_raw->>'dsSegmentoMkt',
+                NULLIF(data_raw->>'idSubcanalMkt', '')::integer,
+                data_raw->>'dsSubcanalMKT',
+                -- === LOGÍSTICA ===
+                NULLIF(data_raw->>'idFleteroCarga', '')::integer,
+                data_raw->>'dsFleteroCarga',
+                data_raw->>'planillaCarga',
+                -- === LÍNEA DE VENTA ===
+                NULLIF(data_raw->>'idArticulo', '')::integer,
+                data_raw->>'dsArticulo',
+                data_raw->>'presentacionArticulo',
+                UPPER(data_raw->>'esCombo') = 'SI',
+                NULLIF(data_raw->>'idCombo', '')::integer,
+                NULLIF(data_raw->>'idPedido', '')::integer,
+                NULLIF(data_raw->>'idorigen', ''),
+                data_raw->>'origen',
+                data_raw->>'acciones',
+                -- === CANTIDADES ===
+                NULLIF(data_raw->>'cantidadesCorCargo', '')::numeric(15,4),
+                NULLIF(data_raw->>'cantidadesSinCargo', '')::numeric(15,4),
+                NULLIF(data_raw->>'cantidadesTotal', '')::numeric(15,4),
+                NULLIF(data_raw->>'cantidadesRechazo', '')::numeric(15,4),
+                -- === PRECIOS ===
+                NULLIF(data_raw->>'precioUnitarioBruto', '')::numeric(15,4),
+                NULLIF(data_raw->>'precioUnitarioNeto', '')::numeric(15,4),
+                NULLIF(data_raw->>'bonificacion', '')::numeric(8,4),
+                NULLIF(data_raw->>'preciocomprabr', '')::numeric(15,4),
+                NULLIF(data_raw->>'preciocomprant', '')::numeric(15,4),
+                -- === SUBTOTALES ===
+                NULLIF(data_raw->>'subtotalBruto', '')::numeric(15,4),
+                NULLIF(data_raw->>'subtotalBonificado', '')::numeric(15,4),
+                NULLIF(data_raw->>'subtotalNeto', '')::numeric(15,4),
+                NULLIF(data_raw->>'subtotalFinal', '')::numeric(15,4),
+                -- === IMPUESTOS ===
+                NULLIF(data_raw->>'iva21', '')::numeric(15,4),
+                NULLIF(data_raw->>'iva27', '')::numeric(15,4),
+                NULLIF(data_raw->>'iva105', '')::numeric(15,4),
+                NULLIF(data_raw->>'iva2', '')::numeric(15,4),
+                NULLIF(data_raw->>'internos', '')::numeric(15,4),
+                NULLIF(data_raw->>'per3337', '')::numeric(15,4),
+                NULLIF(data_raw->>'percepcion212', '')::numeric(15,4),
+                NULLIF(data_raw->>'percepcioniibb', '')::numeric(15,4),
+                NULLIF(data_raw->>'persiibbd', '')::numeric(15,4),
+                NULLIF(data_raw->>'persiibbr', '')::numeric(15,4),
+                data_raw->>'codproviibb',
+                -- === CONTABILIDAD ===
+                data_raw->>'codCuentaContable',
+                data_raw->>'dsCuentaContable',
+                NULLIF(data_raw->>'nroAsientoContable', '')::integer,
+                NULLIF(data_raw->>'nroPlanContable', '')::integer,
+                NULLIF(data_raw->>'idLiquidacion', '')::integer,
+                -- === PROVEEDOR ===
+                data_raw->>'proveedor',
+                NULLIF(NULLIF(data_raw->>'fvigpcompra', ''), '0001-01-01')::date,
+                -- === METADATA / RECHAZO ===
+                NULLIF(data_raw->>'idRechazo', '')::integer,
+                data_raw->>'dsRechazo',
+                UPPER(data_raw->>'informado') = 'SI',
+                data_raw->>'regimenFiscal'
+            FROM bronze.raw_sales
+            {where_clause}
         """
 
-        print("Insertando datos en silver.fact_ventas...")
-        execute_values(cursor, insert_query, silver_data, page_size=1000)
+        insert_start = datetime.now()
+        cursor.execute(insert_query, params if params else None)
+        inserted = cursor.rowcount
+        insert_time = (datetime.now() - insert_start).total_seconds()
+
+        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+
+        commit_start = datetime.now()
         raw_conn.commit()
+        commit_time = (datetime.now() - commit_start).total_seconds()
+        print(f"    ✓ COMMIT completado en {commit_time:.2f}s")
+
         cursor.close()
 
-        print(f"Transformación completada: {len(silver_data)} registros insertados en silver.fact_ventas")
+        total_time = (datetime.now() - start_time).total_seconds()
+        throughput = inserted / total_time if total_time > 0 else 0
+        print(f"\n{'='*60}")
+        print(f"Transformación completada: {inserted:,} registros insertados")
+        print(f"Tiempo total: {total_time:.2f}s ({throughput:,.0f} registros/segundo)")
+        print(f"{'='*60}")
 
 
 if __name__ == '__main__':
