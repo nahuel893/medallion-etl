@@ -37,11 +37,11 @@ def load_depositos():
 
         # Full refresh: DELETE + INSERT
         print("Eliminando datos anteriores...")
-        cursor.execute("DELETE FROM bronze.raw_depositos")
+        cursor.execute("DELETE FROM bronze.raw_deposits")
 
         print("Insertando datos nuevos...")
         query = """
-            INSERT INTO bronze.raw_depositos (id_deposito, descripcion, sucursal, source_system)
+            INSERT INTO bronze.raw_deposits (id_deposito, descripcion, sucursal, source_system)
             VALUES %s
         """
 
@@ -55,7 +55,7 @@ def load_depositos():
         raw_conn.commit()
         cursor.close()
 
-    print(f"Insertados {len(depositos)} depósitos en bronze.raw_depositos")
+    print(f"Insertados {len(depositos)} depósitos en bronze.raw_deposits")
 
 
 if __name__ == '__main__':

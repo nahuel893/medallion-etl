@@ -7,7 +7,7 @@ def load_staff():
     """Carga datos de staff (full refresh: DELETE + INSERT)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
-    print("Consultando clientes desde API...")
+    print("Consultando staff desde API...")
 
     staff = client.get_staff(raw=True)
 
@@ -27,8 +27,8 @@ def load_staff():
 
         print("Insertando datos nuevos...")
         data = [
-            (json.dumps(cliente), 'API_CHESS_ERP')
-            for cliente in staff
+            (json.dumps(record), 'API_CHESS_ERP')
+            for record in staff
         ]
 
         query = """

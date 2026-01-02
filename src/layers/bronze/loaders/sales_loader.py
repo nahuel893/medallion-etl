@@ -70,10 +70,10 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
             )
 
             if not sales:
-                print(f"         Sin datos para este período\n")
+                print(f"Sin datos para este período\n")
                 continue
 
-            print(f"         Obtenidos {len(sales)} registros")
+            print(f"Obtenidos {len(sales)} registros")
 
             data = [
                 (

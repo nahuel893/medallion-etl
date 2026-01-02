@@ -3,7 +3,6 @@ from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
 
-
 def load_clientes():
     """Carga datos de clientes (full refresh: DELETE + INSERT)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
@@ -48,7 +47,6 @@ def load_clientes():
         cursor.close()
 
     print(f"Insertados {len(clientes)} clientes en bronze.raw_clientes")
-
 
 if __name__ == '__main__':
     load_clientes()

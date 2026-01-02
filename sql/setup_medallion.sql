@@ -94,6 +94,18 @@ CREATE INDEX idx_stock_date ON bronze.raw_stock(date_stock);
 CREATE INDEX idx_stock_deposito ON bronze.raw_stock(id_deposito);
 CREATE INDEX idx_stock_ingestion ON bronze.raw_stock(ingestion_at);
 
+CREATE TABLE IF NOT EXISTS bronze.raw_deposits (
+    id SERIAL PRIMARY KEY,
+    ingestion_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    source_system VARCHAR(50),
+    id_deposito INTEGER NOT NULL,
+    descripcion VARCHAR(255),
+    sucursal VARCHAR(100)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bronze_deposits_id
+ON bronze.raw_deposits(id_deposito);
+
 -- Capa SILVER
 GRANT USAGE, CREATE ON SCHEMA silver TO :etl_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA silver TO :etl_user;
