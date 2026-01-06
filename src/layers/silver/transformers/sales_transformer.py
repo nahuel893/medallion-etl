@@ -1,6 +1,9 @@
 """
 Transformer para convertir datos crudos de ventas (bronze) a formato estructurado (silver).
 Utiliza INSERT INTO SELECT para máxima eficiencia (todo ejecutado en PostgreSQL).
+
+NORMALIZADO: Solo IDs de dimensiones, sin descripciones redundantes.
+Las descripciones se obtienen via JOIN a las tablas de dimensiones.
 """
 from database import engine
 from datetime import datetime
@@ -70,31 +73,42 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Encontrados {total:,} registros (COUNT en {count_time:.2f}s)")
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
 
-        # INSERT INTO SELECT (todo en PostgreSQL, sin pasar por Python)
+        # INSERT INTO SELECT - NORMALIZADO (solo IDs, sin descripciones)
         insert_query = f"""
             INSERT INTO silver.fact_ventas (
                 bronze_id,
+                -- Identificación documento
                 id_empresa, id_documento, letra, serie, nro_doc, anulado,
+                -- Fechas
                 fecha_comprobante, fecha_alta, fecha_pedido, fecha_entrega, fecha_vencimiento, fecha_caja,
                 fecha_anulacion, fecha_pago, fecha_liquidacion, fecha_asiento_contable,
-                id_sucursal, ds_sucursal, id_deposito, ds_deposito, id_caja, cajero, id_centro_costo,
-                id_vendedor, ds_vendedor, id_supervisor, ds_supervisor, id_gerente, ds_gerente,
-                id_fuerza_ventas, ds_fuerza_ventas, usuario_alta,
-                id_cliente, nombre_cliente, linea_credito,
-                id_canal_mkt, ds_canal_mkt, id_segmento_mkt, ds_segmento_mkt,
-                id_subcanal_mkt, ds_subcanal_mkt,
-                id_fletero_carga, ds_fletero_carga, planilla_carga,
-                id_articulo, ds_articulo, presentacion_articulo, es_combo, id_combo,
-                id_pedido, id_origen, origen, acciones,
-                cantidades_con_cargo, cantidades_sin_cargo,
-                cantidades_total, cantidades_rechazo,
+                -- Organización (solo IDs)
+                id_sucursal, id_deposito, id_caja, cajero, id_centro_costo,
+                -- Personal (solo IDs)
+                id_vendedor, id_supervisor, id_gerente, id_fuerza_ventas, usuario_alta,
+                -- Cliente (solo ID)
+                id_cliente, linea_credito,
+                -- Segmentación comercial (solo IDs)
+                id_canal_mkt, id_segmento_mkt, id_subcanal_mkt,
+                -- Logística
+                id_fletero_carga, planilla_carga,
+                -- Línea de venta (solo ID artículo)
+                id_articulo, es_combo, id_combo, id_pedido, id_origen, origen, acciones,
+                -- Cantidades
+                cantidades_con_cargo, cantidades_sin_cargo, cantidades_total, cantidades_rechazo,
+                -- Precios
                 precio_unitario_bruto, precio_unitario_neto, bonificacion, precio_compra_bruto, precio_compra_neto,
+                -- Subtotales
                 subtotal_bruto, subtotal_bonificado, subtotal_neto, subtotal_final,
+                -- Impuestos
                 iva21, iva27, iva105, iva2, internos, per3337, percepcion212, percepcion_iibb,
                 pers_iibb_d, pers_iibb_r, cod_prov_iibb,
-                cod_cuenta_contable, ds_cuenta_contable, nro_asiento_contable, nro_plan_contable, id_liquidacion,
+                -- Contabilidad
+                cod_cuenta_contable, nro_asiento_contable, nro_plan_contable, id_liquidacion,
+                -- Proveedor
                 proveedor, fvig_pcompra,
-                id_rechazo, ds_rechazo, informado, regimen_fiscal
+                -- Metadata / Rechazo
+                id_rechazo, informado, regimen_fiscal
             )
             SELECT
                 id,
@@ -105,6 +119,7 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 NULLIF(data_raw->>'serie', '')::integer,
                 NULLIF(data_raw->>'nrodoc', '')::integer,
                 UPPER(data_raw->>'anulado') = 'SI',
+
                 -- === FECHAS ===
                 NULLIF(NULLIF(data_raw->>'fechaComprobate', ''), '0001-01-01')::date,
                 NULLIF(NULLIF(data_raw->>'fechaAlta', ''), '0001-01-01')::date,
@@ -116,65 +131,62 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 NULLIF(NULLIF(data_raw->>'fechaPago', ''), '0001-01-01')::date,
                 NULLIF(NULLIF(data_raw->>'fechaLiquidacion', ''), '0001-01-01')::date,
                 NULLIF(NULLIF(data_raw->>'fechaAsientoContable', ''), '0001-01-01')::date,
-                -- === ORGANIZACIÓN ===
+
+                -- === ORGANIZACIÓN (solo IDs) ===
                 NULLIF(data_raw->>'idSucursal', '')::integer,
-                data_raw->>'dsSucursal',
                 NULLIF(data_raw->>'idDeposito', '')::integer,
-                data_raw->>'dsDeposito',
                 NULLIF(data_raw->>'idCaja', '')::integer,
                 data_raw->>'cajero',
                 NULLIF(data_raw->>'idCentroCosto', '')::integer,
-                -- === PERSONAL ===
+
+                -- === PERSONAL (solo IDs) ===
                 NULLIF(data_raw->>'idVendedor', '')::integer,
-                data_raw->>'dsVendedor',
                 NULLIF(data_raw->>'idSupervisor', '')::integer,
-                data_raw->>'dsSupervisor',
                 NULLIF(data_raw->>'idGerente', '')::integer,
-                data_raw->>'dsGerente',
                 NULLIF(data_raw->>'idFuerzaVentas', '')::integer,
-                data_raw->>'dsFuerzaVentas',
                 data_raw->>'usuarioAlta',
-                -- === CLIENTE ===
+
+                -- === CLIENTE (solo ID) ===
                 NULLIF(data_raw->>'idCliente', '')::integer,
-                data_raw->>'nombreCliente',
                 data_raw->>'lineaCredito',
-                -- === SEGMENTACIÓN COMERCIAL ===
+
+                -- === SEGMENTACIÓN COMERCIAL (solo IDs) ===
                 NULLIF(data_raw->>'idCanalMkt', '')::integer,
-                data_raw->>'dsCanalMkt',
                 NULLIF(data_raw->>'idSegmentoMkt', '')::integer,
-                data_raw->>'dsSegmentoMkt',
                 NULLIF(data_raw->>'idSubcanalMkt', '')::integer,
-                data_raw->>'dsSubcanalMKT',
+
                 -- === LOGÍSTICA ===
                 NULLIF(data_raw->>'idFleteroCarga', '')::integer,
-                data_raw->>'dsFleteroCarga',
                 data_raw->>'planillaCarga',
-                -- === LÍNEA DE VENTA ===
+
+                -- === LÍNEA DE VENTA (solo ID artículo) ===
                 NULLIF(data_raw->>'idArticulo', '')::integer,
-                data_raw->>'dsArticulo',
-                data_raw->>'presentacionArticulo',
                 UPPER(data_raw->>'esCombo') = 'SI',
                 NULLIF(data_raw->>'idCombo', '')::integer,
                 NULLIF(data_raw->>'idPedido', '')::integer,
                 NULLIF(data_raw->>'idorigen', ''),
                 data_raw->>'origen',
                 data_raw->>'acciones',
+
                 -- === CANTIDADES ===
                 NULLIF(data_raw->>'cantidadesCorCargo', '')::numeric(15,4),
                 NULLIF(data_raw->>'cantidadesSinCargo', '')::numeric(15,4),
                 NULLIF(data_raw->>'cantidadesTotal', '')::numeric(15,4),
                 NULLIF(data_raw->>'cantidadesRechazo', '')::numeric(15,4),
+
                 -- === PRECIOS ===
                 NULLIF(data_raw->>'precioUnitarioBruto', '')::numeric(15,4),
                 NULLIF(data_raw->>'precioUnitarioNeto', '')::numeric(15,4),
                 NULLIF(data_raw->>'bonificacion', '')::numeric(8,4),
                 NULLIF(data_raw->>'preciocomprabr', '')::numeric(15,4),
                 NULLIF(data_raw->>'preciocomprant', '')::numeric(15,4),
+
                 -- === SUBTOTALES ===
                 NULLIF(data_raw->>'subtotalBruto', '')::numeric(15,4),
                 NULLIF(data_raw->>'subtotalBonificado', '')::numeric(15,4),
                 NULLIF(data_raw->>'subtotalNeto', '')::numeric(15,4),
                 NULLIF(data_raw->>'subtotalFinal', '')::numeric(15,4),
+
                 -- === IMPUESTOS ===
                 NULLIF(data_raw->>'iva21', '')::numeric(15,4),
                 NULLIF(data_raw->>'iva27', '')::numeric(15,4),
@@ -187,20 +199,22 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 NULLIF(data_raw->>'persiibbd', '')::numeric(15,4),
                 NULLIF(data_raw->>'persiibbr', '')::numeric(15,4),
                 data_raw->>'codproviibb',
+
                 -- === CONTABILIDAD ===
                 data_raw->>'codCuentaContable',
-                data_raw->>'dsCuentaContable',
                 NULLIF(data_raw->>'nroAsientoContable', '')::integer,
                 NULLIF(data_raw->>'nroPlanContable', '')::integer,
                 NULLIF(data_raw->>'idLiquidacion', '')::integer,
-                -- === PROVEEDOR ===
-                data_raw->>'proveedor',
+
+                -- === PROVEEDOR (solo código, sin nombre) ===
+                SPLIT_PART(data_raw->>'proveedor', ' - ', 1),
                 NULLIF(NULLIF(data_raw->>'fvigpcompra', ''), '0001-01-01')::date,
+
                 -- === METADATA / RECHAZO ===
                 NULLIF(data_raw->>'idRechazo', '')::integer,
-                data_raw->>'dsRechazo',
                 UPPER(data_raw->>'informado') = 'SI',
                 data_raw->>'regimenFiscal'
+
             FROM bronze.raw_sales
             {where_clause}
         """
