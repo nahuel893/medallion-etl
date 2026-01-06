@@ -93,7 +93,7 @@ FROM bronze.raw_sales;
 -- Conteo por tabla
 SELECT 'raw_sales' AS tabla, COUNT(*) AS registros FROM bronze.raw_sales
 UNION ALL
-SELECT 'raw_clientes', COUNT(*) FROM bronze.raw_clientes
+SELECT 'raw_clients', COUNT(*) FROM bronze.raw_clients
 UNION ALL
 SELECT 'raw_staff', COUNT(*) FROM bronze.raw_staff
 UNION ALL

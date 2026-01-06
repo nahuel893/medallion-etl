@@ -24,9 +24,9 @@ class RawSales(Base):
     def __repr__(self):
         return f"<RawSales(id={self.id}, source_system='{self.source_system}')>"
 
-class RawClientes(Base):
+class RawClients(Base):
     """Modelo para almacenar datos crudos de clientes desde la API (full refresh)."""
-    __tablename__ = 'raw_clientes'
+    __tablename__ = 'raw_clients'
     __table_args__ = {'schema': 'bronze'}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -35,7 +35,7 @@ class RawClientes(Base):
     data_raw = Column(JSONB)
 
     def __repr__(self):
-        return f"<RawClientes(id={self.id}, source_system='{self.source_system}')>"
+        return f"<RawClients(id={self.id}, source_system='{self.source_system}')>"
 
 
 
