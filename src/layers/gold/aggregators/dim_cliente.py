@@ -58,7 +58,9 @@ def load_dim_cliente():
                 id_ruta_fv4, des_personal_fv4,
                 id_ramo, des_ramo,
                 id_localidad, des_localidad,
-                id_provincia, des_provincia
+                id_provincia, des_provincia,
+                latitud, longitud,
+                id_lista_precio, des_lista_precio
             )
             SELECT
                 c.id_cliente,
@@ -91,7 +93,15 @@ def load_dim_cliente():
                 c.id_localidad,
                 c.desc_localidad,
                 c.id_provincia,
-                c.desc_provincia
+                c.desc_provincia,
+
+                -- Geolocalización
+                c.latitud,
+                c.longitud,
+
+                -- Lista de precio
+                c.id_lista_precio,
+                c.desc_lista_precio
 
             FROM silver.clients c
             LEFT JOIN silver.branches b ON c.id_sucursal = b.id_sucursal
@@ -121,7 +131,11 @@ def load_dim_cliente():
                 id_localidad = EXCLUDED.id_localidad,
                 des_localidad = EXCLUDED.des_localidad,
                 id_provincia = EXCLUDED.id_provincia,
-                des_provincia = EXCLUDED.des_provincia
+                des_provincia = EXCLUDED.des_provincia,
+                latitud = EXCLUDED.latitud,
+                longitud = EXCLUDED.longitud,
+                id_lista_precio = EXCLUDED.id_lista_precio,
+                des_lista_precio = EXCLUDED.des_lista_precio
         """
 
         cursor.execute(insert_query)

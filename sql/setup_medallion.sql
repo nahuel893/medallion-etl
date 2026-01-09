@@ -626,7 +626,15 @@ CREATE TABLE IF NOT EXISTS gold.dim_cliente (
     id_localidad INTEGER,
     des_localidad VARCHAR(100),
     id_provincia VARCHAR(10),
-    des_provincia VARCHAR(100)
+    des_provincia VARCHAR(100),
+
+    -- Geolocalización
+    latitud NUMERIC(15, 6),
+    longitud NUMERIC(15, 6),
+
+    -- Lista de precio
+    id_lista_precio INTEGER,
+    des_lista_precio VARCHAR(100)
 );
 
 CREATE INDEX IF NOT EXISTS idx_dim_cliente_sucursal ON gold.dim_cliente(id_sucursal);
