@@ -1,0 +1,17 @@
+# ==========================================
+# MEDALLION ETL - Dependencias
+# ==========================================
+
+# === CONFIGURACIÓN ===
+pydantic>=2.0
+pydantic-settings>=2.0
+
+# === BASE DE DATOS ===
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+
+# === UTILIDADES ===
+python-dateutil>=2.8
+
+# === API CLIENT ===
+chesserp>=0.1.0
