@@ -6,6 +6,9 @@ import json
 from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def generar_rangos_mensuales(fecha_desde: str, fecha_hasta: str):
@@ -50,7 +53,7 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
     rangos = generar_rangos_mensuales(fecha_desde, fecha_hasta)
-    print(f"Procesando {len(rangos)} mes(es)...\n")
+    logger.info(f"Procesando {len(rangos)} mes(es)")
 
     total_registros = 0
 
@@ -59,7 +62,7 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
         cursor = raw_conn.cursor()
 
         for i, (mes_desde, mes_hasta) in enumerate(rangos, 1):
-            print(f"[{i}/{len(rangos)}] Consultando: {mes_desde} - {mes_hasta}")
+            logger.info(f"[{i}/{len(rangos)}] Consultando: {mes_desde} - {mes_hasta}")
 
             sales = client.get_sales(
                 fecha_desde=mes_desde,
@@ -70,10 +73,10 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
             )
 
             if not sales:
-                print(f"Sin datos para este período\n")
+                logger.warning(f"Sin datos para este período")
                 continue
 
-            print(f"Obtenidos {len(sales)} registros")
+            logger.info(f"Obtenidos {len(sales)} registros")
 
             data = [
                 (
@@ -98,11 +101,11 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
             raw_conn.commit()
 
             total_registros += len(data)
-            print(f"         Insertados correctamente\n")
+            logger.debug(f"Insertados correctamente")
 
         cursor.close()
 
-    print(f"Total: {total_registros} registros insertados en bronze.raw_sales")
+    logger.info(f"Total: {total_registros} registros insertados en bronze.raw_sales")
 
 
 if __name__ == '__main__':

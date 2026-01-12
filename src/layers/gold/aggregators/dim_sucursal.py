@@ -4,6 +4,9 @@ Copia datos desde silver.branches.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_dim_sucursal():
@@ -11,7 +14,7 @@ def load_dim_sucursal():
     Carga dim_sucursal desde silver.branches.
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Cargando dim_sucursal...")
+    logger.info("Cargando dim_sucursal...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -36,7 +39,7 @@ def load_dim_sucursal():
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
-        print(f"    ✓ dim_sucursal completado: {inserted:,} registros en {total_time:.2f}s")
+        logger.info(f"dim_sucursal completado: {inserted:,} registros en {total_time:.2f}s")
 
 
 if __name__ == '__main__':

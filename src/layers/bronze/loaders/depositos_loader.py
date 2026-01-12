@@ -3,6 +3,9 @@ from pathlib import Path
 
 from psycopg2.extras import execute_values
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 # Ruta al archivo de depósitos
@@ -12,7 +15,7 @@ DEPOSITS_FILE = Path(__file__).parent.parent.parent.parent.parent / 'data' / 'de
 def load_depositos():
     """Carga datos de depósitos desde CSV (full refresh: DELETE + INSERT)."""
 
-    print(f"Leyendo depósitos desde: {DEPOSITS_FILE}")
+    logger.info(f"Leyendo depósitos desde: {DEPOSITS_FILE}")
 
     depositos = []
     with open(DEPOSITS_FILE, 'r', encoding='utf-8') as f:
@@ -26,20 +29,20 @@ def load_depositos():
             ))
 
     if not depositos:
-        print("Sin datos de depósitos")
+        logger.warning("Sin datos de depósitos")
         return
 
-    print(f"Obtenidos {len(depositos)} depósitos")
+    logger.info(f"Obtenidos {len(depositos)} depósitos")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         # Full refresh: DELETE + INSERT
-        print("Eliminando datos anteriores...")
+        logger.debug("Eliminando datos anteriores...")
         cursor.execute("DELETE FROM bronze.raw_deposits")
 
-        print("Insertando datos nuevos...")
+        logger.debug("Insertando datos nuevos...")
         query = """
             INSERT INTO bronze.raw_deposits (id_deposito, descripcion, sucursal, source_system)
             VALUES %s
@@ -55,7 +58,7 @@ def load_depositos():
         raw_conn.commit()
         cursor.close()
 
-    print(f"Insertados {len(depositos)} depósitos en bronze.raw_deposits")
+    logger.info(f"Insertados {len(depositos)} depósitos en bronze.raw_deposits")
 
 
 if __name__ == '__main__':

@@ -4,6 +4,9 @@ Copia datos esenciales desde silver.fact_ventas.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
@@ -16,7 +19,7 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
         full_refresh: Si True, elimina todo y recarga
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Cargando gold.fact_ventas...")
+    logger.info("Cargando gold.fact_ventas...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -26,12 +29,12 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
 
         # Determinar modo de carga
         if full_refresh:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Full refresh: eliminando todos los datos...")
+            logger.debug("Full refresh: eliminando todos los datos...")
             cursor.execute("DELETE FROM gold.fact_ventas")
             where_clause = ""
             params = None
         elif fecha_desde and fecha_hasta:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Carga incremental: {fecha_desde} a {fecha_hasta}")
+            logger.debug(f"Carga incremental: {fecha_desde} a {fecha_hasta}")
             cursor.execute(
                 "DELETE FROM gold.fact_ventas WHERE fecha_comprobante BETWEEN %s AND %s",
                 (fecha_desde, fecha_hasta)
@@ -39,7 +42,7 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
             where_clause = "WHERE fecha_comprobante BETWEEN %s AND %s"
             params = (fecha_desde, fecha_hasta)
         else:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Carga completa (sin filtro de fecha)...")
+            logger.debug("Carga completa (sin filtro de fecha)...")
             cursor.execute("DELETE FROM gold.fact_ventas")
             where_clause = ""
             params = None
@@ -80,7 +83,7 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
 
         total_time = (datetime.now() - start_time).total_seconds()
         throughput = inserted / total_time if total_time > 0 else 0
-        print(f"    ✓ gold.fact_ventas completado: {inserted:,} registros en {total_time:.2f}s ({throughput:,.0f} reg/s)")
+        logger.info(f"gold.fact_ventas completado: {inserted:,} registros en {total_time:.2f}s ({throughput:,.0f} reg/s)")
 
 
 if __name__ == '__main__':

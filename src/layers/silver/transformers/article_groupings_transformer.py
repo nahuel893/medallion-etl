@@ -6,6 +6,9 @@ Una fila por cada agrupación (MARCA, GENERICO, CALIBRE, ESQUEMA, PROVEED, UNIDA
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_article_groupings(full_refresh: bool = True):
@@ -17,7 +20,7 @@ def transform_article_groupings(full_refresh: bool = True):
         full_refresh: Si True (default), elimina todos los datos antes de insertar
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de article_groupings...")
+    logger.info("Iniciando transformación de article_groupings...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -29,12 +32,12 @@ def transform_article_groupings(full_refresh: bool = True):
 
         # DELETE - Full refresh
         delete_start = datetime.now()
-        print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando datos de silver.article_groupings...")
+        logger.debug("Full refresh: eliminando datos de silver.article_groupings...")
         cursor.execute("DELETE FROM silver.article_groupings")
         delete_time = (datetime.now() - delete_start).total_seconds()
-        print(f"    ✓ DELETE completado en {delete_time:.2f}s")
+        logger.debug(f"DELETE completado en {delete_time:.2f}s")
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
+        logger.debug("Ejecutando INSERT INTO SELECT...")
 
         # INSERT con LATERAL expansion (SIN PIVOT)
         # Una fila por cada agrupación por artículo
@@ -68,21 +71,18 @@ def transform_article_groupings(full_refresh: bool = True):
         inserted = cursor.rowcount
         insert_time = (datetime.now() - insert_start).total_seconds()
 
-        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+        logger.debug(f"INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
 
         commit_start = datetime.now()
         raw_conn.commit()
         commit_time = (datetime.now() - commit_start).total_seconds()
-        print(f"    ✓ COMMIT completado en {commit_time:.2f}s")
+        logger.debug(f"COMMIT completado en {commit_time:.2f}s")
 
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
         throughput = inserted / total_time if total_time > 0 else 0
-        print(f"\n{'='*60}")
-        print(f"Transformación completada: {inserted:,} article_groupings insertados")
-        print(f"Tiempo total: {total_time:.2f}s ({throughput:,.0f} registros/segundo)")
-        print(f"{'='*60}")
+        logger.info(f"Transformación completada: {inserted:,} article_groupings en {total_time:.2f}s ({throughput:,.0f} reg/s)")
 
 
 if __name__ == '__main__':

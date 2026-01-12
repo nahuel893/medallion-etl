@@ -6,6 +6,9 @@ from pathlib import Path
 from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 # Ruta al archivo de depósitos
@@ -48,7 +51,7 @@ def load_stock(fecha_desde: str, fecha_hasta: str):
     fechas = generar_rangos_diarios(fecha_desde, fecha_hasta)
 
     total_consultas = len(fechas) * len(depositos)
-    print(f"Procesando {len(fechas)} día(s) x {len(depositos)} depósitos = {total_consultas} consultas\n")
+    logger.info(f"Procesando {len(fechas)} día(s) x {len(depositos)} depósitos = {total_consultas} consultas")
 
     total_registros = 0
     consulta_actual = 0
@@ -58,11 +61,11 @@ def load_stock(fecha_desde: str, fecha_hasta: str):
         cursor = raw_conn.cursor()
 
         for fecha in fechas:
-            print(f"--- Fecha: {fecha} ---")
+            logger.info(f"--- Fecha: {fecha} ---")
 
             for deposito in depositos:
                 consulta_actual += 1
-                print(f"[{consulta_actual}/{total_consultas}] Depósito {deposito['id']}: {deposito['nombre']}")
+                logger.debug(f"[{consulta_actual}/{total_consultas}] Depósito {deposito['id']}: {deposito['nombre']}")
 
                 stock = client.get_stock(
                     fecha=fecha,
@@ -71,10 +74,10 @@ def load_stock(fecha_desde: str, fecha_hasta: str):
                 )
 
                 if not stock:
-                    print(f"         Sin datos\n")
+                    logger.debug(f"Sin datos para depósito {deposito['id']}")
                     continue
 
-                print(f"         Obtenidos {len(stock)} registros")
+                logger.debug(f"Obtenidos {len(stock)} registros")
 
                 data = [
                     (json.dumps(item), 'API_CHESS_ERP', fecha, deposito['id'])
@@ -95,11 +98,10 @@ def load_stock(fecha_desde: str, fecha_hasta: str):
 
                 raw_conn.commit()
                 total_registros += len(data)
-                print(f"         Insertados correctamente\n")
 
         cursor.close()
 
-    print(f"Total: {total_registros} registros insertados en bronze.raw_stock")
+    logger.info(f"Total: {total_registros} registros insertados en bronze.raw_stock")
 
 
 if __name__ == '__main__':

@@ -2,31 +2,34 @@ import json
 from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_articles():
     """Carga datos de artículos (full refresh: DELETE + INSERT)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
-    print("Consultando artículos desde API...")
+    logger.info("Consultando artículos desde API...")
 
     articles = client.get_articles(raw=True)
 
     if not articles:
-        print("Sin datos de artículos")
+        logger.warning("Sin datos de artículos")
         return
 
-    print(f"Obtenidos {len(articles)} artículos")
+    logger.info(f"Obtenidos {len(articles)} artículos")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         # Full refresh: DELETE + INSERT
-        print("Eliminando datos anteriores...")
+        logger.debug("Eliminando datos anteriores...")
         cursor.execute("DELETE FROM bronze.raw_articles")
 
-        print("Insertando datos nuevos...")
+        logger.debug("Insertando datos nuevos...")
         data = [
             (json.dumps(article), 'API_CHESS_ERP')
             for article in articles
@@ -47,7 +50,7 @@ def load_articles():
         raw_conn.commit()
         cursor.close()
 
-    print(f"Insertados {len(articles)} artículos en bronze.raw_articles")
+    logger.info(f"Insertados {len(articles)} artículos en bronze.raw_articles")
 
 
 if __name__ == '__main__':

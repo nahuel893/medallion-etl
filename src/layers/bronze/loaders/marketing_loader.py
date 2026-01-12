@@ -2,31 +2,34 @@ import json
 from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_marketing():
     """Carga datos de marketing - segmentos, canales y subcanales (full refresh: DELETE + INSERT)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
-    print("Consultando marketing desde API...")
+    logger.info("Consultando marketing desde API...")
 
     marketing = client.get_marketing(raw=True)
 
     if not marketing:
-        print("Sin datos de marketing")
+        logger.warning("Sin datos de marketing")
         return
 
-    print(f"Obtenidos {len(marketing)} registros de marketing")
+    logger.info(f"Obtenidos {len(marketing)} registros de marketing")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         # Full refresh: DELETE + INSERT
-        print("Eliminando datos anteriores...")
+        logger.debug("Eliminando datos anteriores...")
         cursor.execute("DELETE FROM bronze.raw_marketing")
 
-        print("Insertando datos nuevos...")
+        logger.debug("Insertando datos nuevos...")
         data = [
             (json.dumps(record), 'API_CHESS_ERP')
             for record in marketing
@@ -47,7 +50,7 @@ def load_marketing():
         raw_conn.commit()
         cursor.close()
 
-    print(f"Insertados {len(marketing)} registros en bronze.raw_marketing")
+    logger.info(f"Insertados {len(marketing)} registros en bronze.raw_marketing")
 
 
 if __name__ == '__main__':

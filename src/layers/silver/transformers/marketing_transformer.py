@@ -4,21 +4,23 @@ Extrae la jerarquía de marketing desde bronze.raw_marketing.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_marketing_segments(full_refresh: bool = True):
     """
     Extrae segmentos de marketing desde bronze.raw_marketing a silver.marketing_segments.
     """
-    start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de marketing_segments...")
+    logger.info("Iniciando transformación de marketing_segments...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         if full_refresh:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Full refresh: eliminando datos...")
+            logger.debug("Full refresh: eliminando datos...")
             cursor.execute("DELETE FROM silver.marketing_segments")
 
         insert_query = """
@@ -33,27 +35,26 @@ def transform_marketing_segments(full_refresh: bool = True):
 
         cursor.execute(insert_query)
         inserted = cursor.rowcount
-        print(f"    ✓ INSERT completado ({inserted:,} segmentos)")
+        logger.debug(f"INSERT completado ({inserted:,} segmentos)")
 
         raw_conn.commit()
         cursor.close()
 
-        print(f"Transformación completada: {inserted:,} marketing_segments")
+        logger.info(f"Transformación completada: {inserted:,} marketing_segments")
 
 
 def transform_marketing_channels(full_refresh: bool = True):
     """
     Extrae canales de marketing desde bronze.raw_marketing a silver.marketing_channels.
     """
-    start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de marketing_channels...")
+    logger.info("Iniciando transformación de marketing_channels...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         if full_refresh:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Full refresh: eliminando datos...")
+            logger.debug("Full refresh: eliminando datos...")
             cursor.execute("DELETE FROM silver.marketing_channels")
 
         # Extraer canales desde el array CanalesMkt
@@ -71,27 +72,26 @@ def transform_marketing_channels(full_refresh: bool = True):
 
         cursor.execute(insert_query)
         inserted = cursor.rowcount
-        print(f"    ✓ INSERT completado ({inserted:,} canales)")
+        logger.debug(f"INSERT completado ({inserted:,} canales)")
 
         raw_conn.commit()
         cursor.close()
 
-        print(f"Transformación completada: {inserted:,} marketing_channels")
+        logger.info(f"Transformación completada: {inserted:,} marketing_channels")
 
 
 def transform_marketing_subchannels(full_refresh: bool = True):
     """
     Extrae subcanales de marketing desde bronze.raw_marketing a silver.marketing_subchannels.
     """
-    start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de marketing_subchannels...")
+    logger.info("Iniciando transformación de marketing_subchannels...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         if full_refresh:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Full refresh: eliminando datos...")
+            logger.debug("Full refresh: eliminando datos...")
             cursor.execute("DELETE FROM silver.marketing_subchannels")
 
         # Extraer subcanales desde el array anidado CanalesMkt->SubCanalesMkt
@@ -110,35 +110,29 @@ def transform_marketing_subchannels(full_refresh: bool = True):
 
         cursor.execute(insert_query)
         inserted = cursor.rowcount
-        print(f"    ✓ INSERT completado ({inserted:,} subcanales)")
+        logger.debug(f"INSERT completado ({inserted:,} subcanales)")
 
         raw_conn.commit()
         cursor.close()
 
-        print(f"Transformación completada: {inserted:,} marketing_subchannels")
+        logger.info(f"Transformación completada: {inserted:,} marketing_subchannels")
 
 
 def transform_marketing(full_refresh: bool = True):
     """
     Transforma las 3 tablas de marketing en orden jerárquico.
     """
-    print("\n" + "="*60)
-    print("TRANSFORMACIÓN DE MARKETING (3 niveles)")
-    print("="*60 + "\n")
+    logger.info("Iniciando transformación de marketing (3 niveles)...")
 
     start_time = datetime.now()
 
     # Orden jerárquico: segmentos -> canales -> subcanales
     transform_marketing_segments(full_refresh)
-    print()
     transform_marketing_channels(full_refresh)
-    print()
     transform_marketing_subchannels(full_refresh)
 
     total_time = (datetime.now() - start_time).total_seconds()
-    print(f"\n{'='*60}")
-    print(f"Marketing completo. Tiempo total: {total_time:.2f}s")
-    print(f"{'='*60}\n")
+    logger.info(f"Marketing completo. Tiempo total: {total_time:.2f}s")
 
 
 if __name__ == '__main__':

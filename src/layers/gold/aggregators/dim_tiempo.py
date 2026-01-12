@@ -4,6 +4,9 @@ Genera fechas desde una fecha inicial hasta una fecha final.
 """
 from database import engine
 from datetime import datetime, timedelta
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12-31'):
@@ -11,7 +14,7 @@ def load_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12
     Genera la dimensión tiempo con todas las fechas en el rango especificado.
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Generando dim_tiempo ({fecha_desde} a {fecha_hasta})...")
+    logger.info(f"Generando dim_tiempo ({fecha_desde} a {fecha_hasta})...")
 
     # Nombres en español
     dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -23,7 +26,7 @@ def load_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12
         cursor = raw_conn.cursor()
 
         # Full refresh
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Eliminando datos anteriores...")
+        logger.debug("Eliminando datos anteriores...")
         cursor.execute("DELETE FROM gold.dim_tiempo")
 
         # Generar fechas
@@ -48,7 +51,7 @@ def load_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12
             registros.append(registro)
             fecha_actual += timedelta(days=1)
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Insertando {len(registros):,} fechas...")
+        logger.debug(f"Insertando {len(registros):,} fechas...")
 
         # Bulk insert
         from psycopg2.extras import execute_values
@@ -63,7 +66,7 @@ def load_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
-        print(f"    ✓ dim_tiempo completado: {len(registros):,} fechas en {total_time:.2f}s")
+        logger.info(f"dim_tiempo completado: {len(registros):,} fechas en {total_time:.2f}s")
 
 
 if __name__ == '__main__':

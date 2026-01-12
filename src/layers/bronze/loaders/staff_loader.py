@@ -2,30 +2,33 @@ import json
 from psycopg2.extras import execute_values
 from chesserp.client import ChessClient
 from database import engine
+from config import get_logger
+
+logger = get_logger(__name__)
 
 def load_staff():
     """Carga datos de staff (full refresh: DELETE + INSERT)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
-    print("Consultando staff desde API...")
+    logger.info("Consultando staff desde API...")
 
     staff = client.get_staff(raw=True)
 
     if not staff:
-        print("Sin datos de staff")
+        logger.warning("Sin datos de staff")
         return
 
-    print(f"Obtenidos {len(staff)} staffs")
+    logger.info(f"Obtenidos {len(staff)} staffs")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
 
         # Full refresh: DELETE + INSERT
-        print("Eliminando datos anteriores...")
+        logger.debug("Eliminando datos anteriores...")
         cursor.execute("DELETE FROM bronze.raw_staff")
 
-        print("Insertando datos nuevos...")
+        logger.debug("Insertando datos nuevos...")
         data = [
             (json.dumps(record), 'API_CHESS_ERP')
             for record in staff
@@ -46,7 +49,7 @@ def load_staff():
         raw_conn.commit()
         cursor.close()
 
-    print(f"Insertados {len(staff)} staff en bronze.raw_staff")
+    logger.info(f"Insertados {len(staff)} staff en bronze.raw_staff")
 
 if __name__ == '__main__':
     load_staff()

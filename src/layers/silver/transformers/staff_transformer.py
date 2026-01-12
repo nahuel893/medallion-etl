@@ -4,6 +4,9 @@ Convierte bronze.raw_staff a silver.staff.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_staff(full_refresh: bool = True):
@@ -14,7 +17,7 @@ def transform_staff(full_refresh: bool = True):
         full_refresh: Si True (default), elimina todos los datos antes de insertar
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de staff...")
+    logger.info("Iniciando transformación de staff...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -24,22 +27,22 @@ def transform_staff(full_refresh: bool = True):
 
         if full_refresh:
             delete_start = datetime.now()
-            print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando datos de silver.staff...")
+            logger.debug("Full refresh: eliminando datos de silver.staff...")
             cursor.execute("DELETE FROM silver.staff")
             delete_time = (datetime.now() - delete_start).total_seconds()
-            print(f"    ✓ DELETE completado en {delete_time:.2f}s")
+            logger.debug(f"DELETE completado en {delete_time:.2f}s")
 
         # Contar registros
         cursor.execute("SELECT COUNT(*) FROM bronze.raw_staff")
         total = cursor.fetchone()[0]
 
         if total == 0:
-            print("Sin datos para procesar en bronze.raw_staff")
+            logger.warning("Sin datos para procesar en bronze.raw_staff")
             cursor.close()
             return
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Encontrados {total:,} registros")
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
+        logger.info(f"Encontrados {total:,} registros")
+        logger.debug("Ejecutando INSERT INTO SELECT...")
 
         insert_query = """
             INSERT INTO silver.staff (
@@ -91,17 +94,14 @@ def transform_staff(full_refresh: bool = True):
         inserted = cursor.rowcount
         insert_time = (datetime.now() - insert_start).total_seconds()
 
-        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+        logger.debug(f"INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
 
         raw_conn.commit()
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
         throughput = inserted / total_time if total_time > 0 else 0
-        print(f"\n{'='*60}")
-        print(f"Transformación completada: {inserted:,} staff insertados")
-        print(f"Tiempo total: {total_time:.2f}s ({throughput:,.0f} registros/segundo)")
-        print(f"{'='*60}")
+        logger.info(f"Transformación completada: {inserted:,} staff en {total_time:.2f}s ({throughput:,.0f} reg/s)")
 
 
 if __name__ == '__main__':

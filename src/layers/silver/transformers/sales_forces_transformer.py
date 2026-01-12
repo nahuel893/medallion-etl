@@ -4,6 +4,9 @@ Extrae fuerzas de venta únicas desde bronze.raw_staff.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_sales_forces(full_refresh: bool = True):
@@ -14,7 +17,7 @@ def transform_sales_forces(full_refresh: bool = True):
         full_refresh: Si True (default), elimina todos los datos antes de insertar
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de sales_forces...")
+    logger.info("Iniciando transformación de sales_forces...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -24,12 +27,12 @@ def transform_sales_forces(full_refresh: bool = True):
 
         if full_refresh:
             delete_start = datetime.now()
-            print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando datos de silver.sales_forces...")
+            logger.debug("Full refresh: eliminando datos de silver.sales_forces...")
             cursor.execute("DELETE FROM silver.sales_forces")
             delete_time = (datetime.now() - delete_start).total_seconds()
-            print(f"    ✓ DELETE completado en {delete_time:.2f}s")
+            logger.debug(f"DELETE completado en {delete_time:.2f}s")
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
+        logger.debug("Ejecutando INSERT INTO SELECT...")
 
         # Extraer fuerzas de venta únicas desde staff
         insert_query = """
@@ -47,16 +50,13 @@ def transform_sales_forces(full_refresh: bool = True):
         inserted = cursor.rowcount
         insert_time = (datetime.now() - insert_start).total_seconds()
 
-        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+        logger.debug(f"INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
 
         raw_conn.commit()
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
-        print(f"\n{'='*60}")
-        print(f"Transformación completada: {inserted:,} sales_forces insertados")
-        print(f"Tiempo total: {total_time:.2f}s")
-        print(f"{'='*60}")
+        logger.info(f"Transformación completada: {inserted:,} sales_forces en {total_time:.2f}s")
 
 
 if __name__ == '__main__':

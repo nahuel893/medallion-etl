@@ -7,6 +7,9 @@ Las descripciones se obtienen via JOIN a las tablas de dimensiones.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
@@ -19,7 +22,7 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         full_refresh: Si True, elimina todos los datos de silver antes de insertar
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación...")
+    logger.info("Iniciando transformación de ventas...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -45,10 +48,10 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         # DELETE según el modo
         delete_start = datetime.now()
         if full_refresh:
-            print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando todos los datos de silver.fact_ventas...")
+            logger.debug("Full refresh: eliminando todos los datos de silver.fact_ventas...")
             cursor.execute("DELETE FROM silver.fact_ventas")
         elif fecha_desde and fecha_hasta:
-            print(f"[{delete_start.strftime('%H:%M:%S')}] Eliminando datos existentes en silver para el rango {fecha_desde} - {fecha_hasta}...")
+            logger.debug(f"Eliminando datos existentes en silver para el rango {fecha_desde} - {fecha_hasta}...")
             cursor.execute(
                 "DELETE FROM silver.fact_ventas WHERE fecha_comprobante >= %s AND fecha_comprobante <= %s",
                 (fecha_desde, fecha_hasta)
@@ -56,7 +59,7 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
 
         if full_refresh or (fecha_desde and fecha_hasta):
             delete_time = (datetime.now() - delete_start).total_seconds()
-            print(f"    ✓ DELETE completado en {delete_time:.2f}s")
+            logger.debug(f"DELETE completado en {delete_time:.2f}s")
 
         # Contar registros a procesar
         count_start = datetime.now()
@@ -66,12 +69,12 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         count_time = (datetime.now() - count_start).total_seconds()
 
         if total == 0:
-            print("Sin datos para procesar en bronze.raw_sales")
+            logger.warning("Sin datos para procesar en bronze.raw_sales")
             cursor.close()
             return
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Encontrados {total:,} registros (COUNT en {count_time:.2f}s)")
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
+        logger.info(f"Encontrados {total:,} registros (COUNT en {count_time:.2f}s)")
+        logger.debug("Ejecutando INSERT INTO SELECT...")
 
         # INSERT INTO SELECT - NORMALIZADO (solo IDs, sin descripciones)
         insert_query = f"""
@@ -224,21 +227,18 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         inserted = cursor.rowcount
         insert_time = (datetime.now() - insert_start).total_seconds()
 
-        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+        logger.debug(f"INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
 
         commit_start = datetime.now()
         raw_conn.commit()
         commit_time = (datetime.now() - commit_start).total_seconds()
-        print(f"    ✓ COMMIT completado en {commit_time:.2f}s")
+        logger.debug(f"COMMIT completado en {commit_time:.2f}s")
 
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
         throughput = inserted / total_time if total_time > 0 else 0
-        print(f"\n{'='*60}")
-        print(f"Transformación completada: {inserted:,} registros insertados")
-        print(f"Tiempo total: {total_time:.2f}s ({throughput:,.0f} registros/segundo)")
-        print(f"{'='*60}")
+        logger.info(f"Transformación completada: {inserted:,} ventas en {total_time:.2f}s ({throughput:,.0f} reg/s)")
 
 
 if __name__ == '__main__':

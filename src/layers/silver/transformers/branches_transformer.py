@@ -5,6 +5,9 @@ Las descripciones se cargan manualmente después.
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def transform_branches(full_refresh: bool = True):
@@ -16,7 +19,7 @@ def transform_branches(full_refresh: bool = True):
         full_refresh: Si True (default), elimina todos los datos antes de insertar
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Iniciando transformación de branches...")
+    logger.info("Iniciando transformación de branches...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -26,12 +29,12 @@ def transform_branches(full_refresh: bool = True):
 
         if full_refresh:
             delete_start = datetime.now()
-            print(f"[{delete_start.strftime('%H:%M:%S')}] Full refresh: eliminando datos de silver.branches...")
+            logger.debug("Full refresh: eliminando datos de silver.branches...")
             cursor.execute("DELETE FROM silver.branches")
             delete_time = (datetime.now() - delete_start).total_seconds()
-            print(f"    ✓ DELETE completado en {delete_time:.2f}s")
+            logger.debug(f"DELETE completado en {delete_time:.2f}s")
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Ejecutando INSERT INTO SELECT...")
+        logger.debug("Ejecutando INSERT INTO SELECT...")
 
         # Extraer sucursales únicas desde staff
         insert_query = """
@@ -49,17 +52,13 @@ def transform_branches(full_refresh: bool = True):
         inserted = cursor.rowcount
         insert_time = (datetime.now() - insert_start).total_seconds()
 
-        print(f"    ✓ INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
+        logger.debug(f"INSERT completado en {insert_time:.2f}s ({inserted:,} registros)")
 
         raw_conn.commit()
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
-        print(f"\n{'='*60}")
-        print(f"Transformación completada: {inserted:,} branches insertados")
-        print(f"NOTA: Actualizar descripciones manualmente si es necesario")
-        print(f"Tiempo total: {total_time:.2f}s")
-        print(f"{'='*60}")
+        logger.info(f"Transformación completada: {inserted:,} branches en {total_time:.2f}s")
 
 
 if __name__ == '__main__':

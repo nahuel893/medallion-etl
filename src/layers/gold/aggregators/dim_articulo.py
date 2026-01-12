@@ -4,6 +4,9 @@ Desnormaliza artículos con sus agrupaciones (marca, genérico, calibre, proveed
 """
 from database import engine
 from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_dim_articulo():
@@ -11,7 +14,7 @@ def load_dim_articulo():
     Carga dim_articulo desde silver.articles con agrupaciones desnormalizadas.
     """
     start_time = datetime.now()
-    print(f"[{start_time.strftime('%H:%M:%S')}] Cargando dim_articulo...")
+    logger.info("Cargando dim_articulo...")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -53,7 +56,7 @@ def load_dim_articulo():
         cursor.close()
 
         total_time = (datetime.now() - start_time).total_seconds()
-        print(f"    ✓ dim_articulo completado: {inserted:,} registros en {total_time:.2f}s")
+        logger.info(f"dim_articulo completado: {inserted:,} registros en {total_time:.2f}s")
 
 
 if __name__ == '__main__':
