@@ -11,22 +11,28 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
-# Función para leer variables del .env (maneja espacios y comillas)
-get_env_var() {
-    local var_name=$1
-    grep "^${var_name}" "$ENV_FILE" | sed "s/^${var_name}[[:space:]]*=[[:space:]]*//" | tr -d "\"'"
-}
+# Cargar variables del .env directamente
+set -a
+source "$ENV_FILE"
+set +a
 
-# Credenciales de PostgreSQL
-DB_NAME=$(get_env_var "DATABASE")
-DB_USER=$(get_env_var "POSTGRES_USER")
-DB_PASSWORD=$(get_env_var "POSTGRES_PASSWORD")
+# Alias para claridad
+DB_NAME="$DATABASE"
+DB_USER="$POSTGRES_USER"
+DB_PASSWORD="$POSTGRES_PASSWORD"
 
-# Usuarios de la Plataforma
-ETL_USER=$(get_env_var "ETL_USER")
-ETL_PASSWORD=$(get_env_var "ETL_PASSWORD")
-READONLY_USER=$(get_env_var "READONLY_USER")
-READONLY_PASSWORD=$(get_env_var "READONLY_PASSWORD")
+# Validar variables requeridas
+for var in DB_NAME DB_USER DB_PASSWORD ETL_USER ETL_PASSWORD READONLY_USER READONLY_PASSWORD; do
+    if [ -z "${!var}" ]; then
+        echo "Error: Variable $var no está definida en .env"
+        exit 1
+    fi
+done
+
+echo "Variables cargadas correctamente:"
+echo "  DATABASE: $DB_NAME"
+echo "  ETL_USER: $ETL_USER"
+echo "  READONLY_USER: $READONLY_USER"
 
 # Ruta al archivo SQL
 SQL_SCRIPT="$SCRIPT_DIR/sql/setup_medallion.sql"
