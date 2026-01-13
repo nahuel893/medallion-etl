@@ -12,6 +12,7 @@ psycopg2-binary>=2.9
 
 # === UTILIDADES ===
 python-dateutil>=2.8
+python-dotenv>=1.0
 
 # === API CLIENT ===
 # chesserp>=0.1.0

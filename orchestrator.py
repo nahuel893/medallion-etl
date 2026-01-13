@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Orchestrator - Punto de entrada único para el pipeline ETL Medallion.
 
@@ -43,6 +42,10 @@ Ejemplos:
 """
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar .env antes de cualquier otro import del proyecto
+load_dotenv(Path(__file__).parent / '.env')
 
 # Agregar src/ al path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
