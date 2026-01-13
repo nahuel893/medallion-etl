@@ -54,11 +54,14 @@ sudo systemctl enable postgresql
 # Esto se mantiene en bash porque necesitamos ser 'postgres' para crear la BD inicial
 echo "=== 2. Creando Base de Datos y Admin ==="
 sudo -u postgres psql <<EOF
--- Crea el usuario admin si no existe
+-- Crea el usuario admin si no existe (con permisos para crear roles y DBs)
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$DB_USER') THEN
-    CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD' CREATEDB;
+    CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD' CREATEDB CREATEROLE;
+  ELSE
+    -- Si ya existe, asegurarse de que tenga CREATEROLE
+    ALTER USER $DB_USER WITH CREATEROLE;
   END IF;
 END
 \$\$;
