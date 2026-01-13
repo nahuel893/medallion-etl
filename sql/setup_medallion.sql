@@ -90,9 +90,9 @@ CREATE TABLE IF NOT EXISTS bronze.raw_stock (
     id_deposito INTEGER
 );
 
-CREATE INDEX idx_stock_date ON bronze.raw_stock(date_stock);
-CREATE INDEX idx_stock_deposito ON bronze.raw_stock(id_deposito);
-CREATE INDEX idx_stock_ingestion ON bronze.raw_stock(ingestion_at);
+CREATE INDEX IF NOT EXISTS idx_stock_date ON bronze.raw_stock(date_stock);
+CREATE INDEX IF NOT EXISTS idx_stock_deposito ON bronze.raw_stock(id_deposito);
+CREATE INDEX IF NOT EXISTS idx_stock_ingestion ON bronze.raw_stock(ingestion_at);
 
 CREATE TABLE IF NOT EXISTS bronze.raw_deposits (
     id SERIAL PRIMARY KEY,
@@ -688,5 +688,5 @@ GRANT SELECT ON ALL TABLES IN SCHEMA gold TO :readonly_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA gold GRANT SELECT ON TABLES TO :readonly_user;
 
 -- Opcional: Revocar acceso a public por seguridad
-REVOKE ALL ON SCHEMA public FROM :readonly_user;REVOKE ALL ON SCHEMA public FROM :readonly_user;
+REVOKE ALL ON SCHEMA public FROM :readonly_user;
 
