@@ -73,14 +73,20 @@ EOF
 # ==========================================
 echo "=== 3. Aplicando Arquitectura Medallion y Permisos ==="
 
-# Aquí ocurre la magia: Inyectamos las variables de bash hacia el archivo SQL
-PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME \
+# Debug: Mostrar variables que se pasan a psql
+echo "Variables a pasar a psql:"
+echo "  db_name=$DB_NAME"
+echo "  etl_user=$ETL_USER"
+echo "  readonly_user=$READONLY_USER"
+
+# Inyectamos las variables de bash hacia el archivo SQL
+PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" -d "$DB_NAME" \
     -v db_name="$DB_NAME" \
     -v etl_user="$ETL_USER" \
     -v etl_password="$ETL_PASSWORD" \
     -v readonly_user="$READONLY_USER" \
     -v readonly_password="$READONLY_PASSWORD" \
-    -f $SQL_SCRIPT
+    -f "$SQL_SCRIPT"
 
 echo ""
 echo "✅ Instalación Exitosa."

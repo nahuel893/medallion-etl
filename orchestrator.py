@@ -47,6 +47,10 @@ from pathlib import Path
 # Agregar src/ al path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
+from config import get_logger
+
+logger = get_logger('orchestrator')
+
 
 # ==========================================
 # BRONZE LOADERS
@@ -55,65 +59,65 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 def bronze_sales(fecha_desde: str, fecha_hasta: str):
     """Ejecuta la carga de ventas en Bronze."""
     from layers.bronze import load_bronze
-    print(f"=== BRONZE SALES: Cargando datos ({fecha_desde} - {fecha_hasta}) ===")
+    logger.info(f"BRONZE SALES: Iniciando carga ({fecha_desde} - {fecha_hasta})")
     load_bronze(fecha_desde, fecha_hasta)
-    print("=== BRONZE SALES: Completado ===\n")
+    logger.info("BRONZE SALES: Completado")
 
 
 def bronze_clientes():
     """Ejecuta la carga de clientes en Bronze (full refresh)."""
     from layers.bronze import load_clientes
-    print("=== BRONZE CLIENTES: Cargando datos (full refresh) ===")
+    logger.info("BRONZE CLIENTES: Iniciando carga (full refresh)")
     load_clientes()
-    print("=== BRONZE CLIENTES: Completado ===\n")
+    logger.info("BRONZE CLIENTES: Completado")
 
 
 def bronze_staff():
     """Ejecuta la carga de staff en Bronze (full refresh)."""
     from layers.bronze import load_staff
-    print("=== BRONZE STAFF: Cargando datos (full refresh) ===")
+    logger.info("BRONZE STAFF: Iniciando carga (full refresh)")
     load_staff()
-    print("=== BRONZE STAFF: Completado ===\n")
+    logger.info("BRONZE STAFF: Completado")
 
 
 def bronze_routes():
     """Ejecuta la carga de rutas en Bronze (full refresh)."""
     from layers.bronze import load_routes
-    print("=== BRONZE ROUTES: Cargando datos (full refresh) ===")
+    logger.info("BRONZE ROUTES: Iniciando carga (full refresh)")
     load_routes()
-    print("=== BRONZE ROUTES: Completado ===\n")
+    logger.info("BRONZE ROUTES: Completado")
 
 
 def bronze_articles():
     """Ejecuta la carga de artículos en Bronze (full refresh)."""
     from layers.bronze import load_articles
-    print("=== BRONZE ARTICLES: Cargando datos (full refresh) ===")
+    logger.info("BRONZE ARTICLES: Iniciando carga (full refresh)")
     load_articles()
-    print("=== BRONZE ARTICLES: Completado ===\n")
+    logger.info("BRONZE ARTICLES: Completado")
 
 
 def bronze_stock(fecha_desde: str, fecha_hasta: str):
     """Ejecuta la carga de stock en Bronze (append)."""
     from layers.bronze import load_stock
-    print(f"=== BRONZE STOCK: Cargando datos ({fecha_desde} - {fecha_hasta}) (append) ===")
+    logger.info(f"BRONZE STOCK: Iniciando carga ({fecha_desde} - {fecha_hasta})")
     load_stock(fecha_desde, fecha_hasta)
-    print("=== BRONZE STOCK: Completado ===\n")
+    logger.info("BRONZE STOCK: Completado")
 
 
 def bronze_depositos():
     """Ejecuta la carga de depósitos en Bronze (full refresh)."""
     from layers.bronze import load_depositos
-    print("=== BRONZE DEPOSITOS: Cargando datos desde CSV (full refresh) ===")
+    logger.info("BRONZE DEPOSITOS: Iniciando carga desde CSV (full refresh)")
     load_depositos()
-    print("=== BRONZE DEPOSITOS: Completado ===\n")
+    logger.info("BRONZE DEPOSITOS: Completado")
 
 
 def bronze_marketing():
     """Ejecuta la carga de marketing en Bronze (full refresh)."""
     from layers.bronze import load_marketing
-    print("=== BRONZE MARKETING: Cargando datos (full refresh) ===")
+    logger.info("BRONZE MARKETING: Iniciando carga (full refresh)")
     load_marketing()
-    print("=== BRONZE MARKETING: Completado ===\n")
+    logger.info("BRONZE MARKETING: Completado")
 
 
 # ==========================================
@@ -124,107 +128,98 @@ def silver_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: boo
     """Ejecuta la transformación de ventas a Silver."""
     from layers.silver.transformers.sales_transformer import transform_sales
 
-    print("=== SILVER SALES: Transformando datos ===")
+    logger.info("SILVER SALES: Iniciando transformación")
     if full_refresh:
-        print("    Modo: Full Refresh")
+        logger.info("  Modo: Full Refresh")
         transform_sales(full_refresh=True)
     elif fecha_desde and fecha_hasta:
-        print(f"    Rango: {fecha_desde} - {fecha_hasta}")
+        logger.info(f"  Rango: {fecha_desde} - {fecha_hasta}")
         transform_sales(fecha_desde, fecha_hasta)
     else:
-        print("    Transformando todos los datos disponibles")
+        logger.info("  Transformando todos los datos disponibles")
         transform_sales()
-    print("=== SILVER SALES: Completado ===\n")
+    logger.info("SILVER SALES: Completado")
 
 
 def silver_clientes(full_refresh: bool = True):
     """Ejecuta la transformación de clientes a Silver (siempre full refresh)."""
     from layers.silver.transformers.clients_transformer import transform_clients
 
-    print("=== SILVER CLIENTS: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER CLIENTS: Iniciando transformación (full refresh)")
     transform_clients(full_refresh=full_refresh)
-    print("=== SILVER CLIENTS: Completado ===\n")
+    logger.info("SILVER CLIENTS: Completado")
 
 
 def silver_articles(full_refresh: bool = True):
     """Ejecuta la transformación de artículos a Silver (siempre full refresh)."""
     from layers.silver.transformers.articles_transformer import transform_articles
 
-    print("=== SILVER ARTICLES: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER ARTICLES: Iniciando transformación (full refresh)")
     transform_articles(full_refresh=full_refresh)
-    print("=== SILVER ARTICLES: Completado ===\n")
+    logger.info("SILVER ARTICLES: Completado")
 
 
 def silver_client_forces(full_refresh: bool = True):
     """Ejecuta la transformación de fuerzas de venta de clientes a Silver."""
     from layers.silver.transformers.client_forces_transformer import transform_client_forces
 
-    print("=== SILVER CLIENT_FORCES: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER CLIENT_FORCES: Iniciando transformación (full refresh)")
     transform_client_forces(full_refresh=full_refresh)
-    print("=== SILVER CLIENT_FORCES: Completado ===\n")
+    logger.info("SILVER CLIENT_FORCES: Completado")
 
 
 def silver_branches(full_refresh: bool = True):
     """Ejecuta la transformación de sucursales a Silver."""
     from layers.silver.transformers.branches_transformer import transform_branches
 
-    print("=== SILVER BRANCHES: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER BRANCHES: Iniciando transformación (full refresh)")
     transform_branches(full_refresh=full_refresh)
-    print("=== SILVER BRANCHES: Completado ===\n")
+    logger.info("SILVER BRANCHES: Completado")
 
 
 def silver_sales_forces(full_refresh: bool = True):
     """Ejecuta la transformación de fuerzas de venta a Silver."""
     from layers.silver.transformers.sales_forces_transformer import transform_sales_forces
 
-    print("=== SILVER SALES_FORCES: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER SALES_FORCES: Iniciando transformación (full refresh)")
     transform_sales_forces(full_refresh=full_refresh)
-    print("=== SILVER SALES_FORCES: Completado ===\n")
+    logger.info("SILVER SALES_FORCES: Completado")
 
 
 def silver_staff(full_refresh: bool = True):
     """Ejecuta la transformación de personal/preventistas a Silver."""
     from layers.silver.transformers.staff_transformer import transform_staff
 
-    print("=== SILVER STAFF: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER STAFF: Iniciando transformación (full refresh)")
     transform_staff(full_refresh=full_refresh)
-    print("=== SILVER STAFF: Completado ===\n")
+    logger.info("SILVER STAFF: Completado")
 
 
 def silver_routes(full_refresh: bool = True):
     """Ejecuta la transformación de rutas a Silver."""
     from layers.silver.transformers.routes_transformer import transform_routes
 
-    print("=== SILVER ROUTES: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER ROUTES: Iniciando transformación (full refresh)")
     transform_routes(full_refresh=full_refresh)
-    print("=== SILVER ROUTES: Completado ===\n")
+    logger.info("SILVER ROUTES: Completado")
 
 
 def silver_article_groupings(full_refresh: bool = True):
     """Ejecuta la transformación de agrupaciones de artículos a Silver."""
     from layers.silver.transformers.article_groupings_transformer import transform_article_groupings
 
-    print("=== SILVER ARTICLE_GROUPINGS: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER ARTICLE_GROUPINGS: Iniciando transformación (full refresh)")
     transform_article_groupings(full_refresh=full_refresh)
-    print("=== SILVER ARTICLE_GROUPINGS: Completado ===\n")
+    logger.info("SILVER ARTICLE_GROUPINGS: Completado")
 
 
 def silver_marketing(full_refresh: bool = True):
     """Ejecuta la transformación de marketing (segmentos, canales, subcanales) a Silver."""
     from layers.silver.transformers.marketing_transformer import transform_marketing
 
-    print("=== SILVER MARKETING: Transformando datos ===")
-    print("    Modo: Full Refresh")
+    logger.info("SILVER MARKETING: Iniciando transformación (full refresh)")
     transform_marketing(full_refresh=full_refresh)
-    print("=== SILVER MARKETING: Completado ===\n")
+    logger.info("SILVER MARKETING: Completado")
 
 
 # ==========================================
@@ -234,61 +229,61 @@ def silver_marketing(full_refresh: bool = True):
 def gold_dim_tiempo(fecha_desde: str = '2020-01-01', fecha_hasta: str = '2030-12-31'):
     """Genera dimensión tiempo."""
     from layers.gold.aggregators import load_dim_tiempo
-    print("=== GOLD DIM_TIEMPO: Generando dimensión ===")
+    logger.info(f"GOLD DIM_TIEMPO: Generando dimensión ({fecha_desde} - {fecha_hasta})")
     load_dim_tiempo(fecha_desde, fecha_hasta)
-    print("=== GOLD DIM_TIEMPO: Completado ===\n")
+    logger.info("GOLD DIM_TIEMPO: Completado")
 
 
 def gold_dim_sucursal():
     """Carga dimensión sucursal."""
     from layers.gold.aggregators import load_dim_sucursal
-    print("=== GOLD DIM_SUCURSAL: Cargando dimensión ===")
+    logger.info("GOLD DIM_SUCURSAL: Cargando dimensión")
     load_dim_sucursal()
-    print("=== GOLD DIM_SUCURSAL: Completado ===\n")
+    logger.info("GOLD DIM_SUCURSAL: Completado")
 
 
 def gold_dim_vendedor():
     """Carga dimensión vendedor."""
     from layers.gold.aggregators import load_dim_vendedor
-    print("=== GOLD DIM_VENDEDOR: Cargando dimensión ===")
+    logger.info("GOLD DIM_VENDEDOR: Cargando dimensión")
     load_dim_vendedor()
-    print("=== GOLD DIM_VENDEDOR: Completado ===\n")
+    logger.info("GOLD DIM_VENDEDOR: Completado")
 
 
 def gold_dim_articulo():
     """Carga dimensión artículo."""
     from layers.gold.aggregators import load_dim_articulo
-    print("=== GOLD DIM_ARTICULO: Cargando dimensión ===")
+    logger.info("GOLD DIM_ARTICULO: Cargando dimensión")
     load_dim_articulo()
-    print("=== GOLD DIM_ARTICULO: Completado ===\n")
+    logger.info("GOLD DIM_ARTICULO: Completado")
 
 
 def gold_dim_cliente():
     """Carga dimensión cliente."""
     from layers.gold.aggregators import load_dim_cliente
-    print("=== GOLD DIM_CLIENTE: Cargando dimensión ===")
+    logger.info("GOLD DIM_CLIENTE: Cargando dimensión")
     load_dim_cliente()
-    print("=== GOLD DIM_CLIENTE: Completado ===\n")
+    logger.info("GOLD DIM_CLIENTE: Completado")
 
 
 def gold_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
     """Carga fact table de ventas."""
     from layers.gold.aggregators import load_fact_ventas
-    print("=== GOLD FACT_VENTAS: Cargando hechos ===")
+    logger.info("GOLD FACT_VENTAS: Cargando hechos")
     load_fact_ventas(fecha_desde, fecha_hasta, full_refresh)
-    print("=== GOLD FACT_VENTAS: Completado ===\n")
+    logger.info("GOLD FACT_VENTAS: Completado")
 
 
 def gold_all():
     """Carga todas las dimensiones y hechos en orden."""
-    print("========== GOLD: Cargando esquema estrella completo ==========\n")
+    logger.info("GOLD: Iniciando carga de esquema estrella completo")
     gold_dim_tiempo()
     gold_dim_sucursal()
     gold_dim_vendedor()
     gold_dim_articulo()
     gold_dim_cliente()
     gold_fact_ventas(full_refresh=True)
-    print("========== GOLD: Esquema estrella completado ==========\n")
+    logger.info("GOLD: Esquema estrella completado")
 
 
 # ==========================================
@@ -297,11 +292,10 @@ def gold_all():
 
 def run_all_sales(fecha_desde: str, fecha_hasta: str):
     """Ejecuta el pipeline completo para ventas: Bronze -> Silver -> Gold."""
-    print("========== PIPELINE MEDALLION: SALES ==========\n")
+    logger.info("PIPELINE MEDALLION: Iniciando pipeline completo de ventas")
     bronze_sales(fecha_desde, fecha_hasta)
     silver_sales(fecha_desde, fecha_hasta)
-    gold_placeholder('sales')
-    print("========== PIPELINE COMPLETADO ==========")
+    logger.info("PIPELINE MEDALLION: Pipeline completado")
 
 
 # ==========================================
@@ -331,8 +325,8 @@ if __name__ == '__main__':
     if capa == 'bronze':
         if entidad == 'sales':
             if len(sys.argv) < 5:
-                print("Error: bronze sales requiere <fecha_desde> <fecha_hasta>")
-                print("Ejemplo: python orchestrator.py bronze sales 2025-12-01 2025-12-31")
+                logger.error("bronze sales requiere <fecha_desde> <fecha_hasta>")
+                logger.error("Ejemplo: python orchestrator.py bronze sales 2025-12-01 2025-12-31")
                 sys.exit(1)
             bronze_sales(sys.argv[3], sys.argv[4])
 
@@ -350,8 +344,8 @@ if __name__ == '__main__':
 
         elif entidad == 'stock':
             if len(sys.argv) < 5:
-                print("Error: bronze stock requiere <fecha_desde> <fecha_hasta>")
-                print("Ejemplo: python orchestrator.py bronze stock 2025-12-01 2025-12-31")
+                logger.error("bronze stock requiere <fecha_desde> <fecha_hasta>")
+                logger.error("Ejemplo: python orchestrator.py bronze stock 2025-12-01 2025-12-31")
                 sys.exit(1)
             bronze_stock(sys.argv[3], sys.argv[4])
 
@@ -362,8 +356,8 @@ if __name__ == '__main__':
             bronze_marketing()
 
         else:
-            print(f"Error: Entidad '{entidad}' no reconocida para bronze")
-            print("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing")
+            logger.error(f"Entidad '{entidad}' no reconocida para bronze")
+            logger.error("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing")
             sys.exit(1)
 
     # ==========================================
@@ -413,8 +407,8 @@ if __name__ == '__main__':
             silver_marketing(full_refresh)
 
         else:
-            print(f"Error: Entidad '{entidad}' no tiene transformer en silver")
-            print("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing")
+            logger.error(f"Entidad '{entidad}' no tiene transformer en silver")
+            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing")
             sys.exit(1)
 
     # ==========================================
@@ -448,8 +442,8 @@ if __name__ == '__main__':
             gold_all()
 
         else:
-            print(f"Error: Entidad '{entidad}' no reconocida para gold")
-            print("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, all")
+            logger.error(f"Entidad '{entidad}' no reconocida para gold")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, all")
             sys.exit(1)
 
     # ==========================================
@@ -458,15 +452,15 @@ if __name__ == '__main__':
     elif capa == 'all':
         if entidad == 'sales':
             if len(sys.argv) < 5:
-                print("Error: all sales requiere <fecha_desde> <fecha_hasta>")
-                print("Ejemplo: python orchestrator.py all sales 2025-12-01 2025-12-31")
+                logger.error("all sales requiere <fecha_desde> <fecha_hasta>")
+                logger.error("Ejemplo: python orchestrator.py all sales 2025-12-01 2025-12-31")
                 sys.exit(1)
             run_all_sales(sys.argv[3], sys.argv[4])
         else:
-            print(f"Error: Pipeline completo solo disponible para 'sales' por ahora")
+            logger.error(f"Pipeline completo solo disponible para 'sales' por ahora")
             sys.exit(1)
 
     else:
-        print(f"Error: Capa '{capa}' no reconocida")
-        print("Capas disponibles: bronze, silver, gold, all")
+        logger.error(f"Capa '{capa}' no reconocida")
+        logger.error("Capas disponibles: bronze, silver, gold, all")
         sys.exit(1)

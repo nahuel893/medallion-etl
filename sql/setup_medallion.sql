@@ -2,28 +2,28 @@
 -- Descripción: Configuración inicial de arquitectura Medallion (Schemas + Roles)
 
 -- ==========================================
--- 1. CREACIÓN DE ESQUEMAS (CAPAS LÓGICAS)
+-- 1. CREACIÓN DE USUARIOS (ANTES DE TODO)
+-- ==========================================
+-- Crear usuarios si no existen (usando \gexec para manejar variables psql)
+
+SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'etl_user', :'etl_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = :'etl_user')
+\gexec
+
+SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'readonly_user', :'readonly_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = :'readonly_user')
+\gexec
+
+-- ==========================================
+-- 2. CREACIÓN DE ESQUEMAS (CAPAS LÓGICAS)
 -- ==========================================
 CREATE SCHEMA IF NOT EXISTS bronze;
 CREATE SCHEMA IF NOT EXISTS silver;
 CREATE SCHEMA IF NOT EXISTS gold;
 
 -- ==========================================
--- 2. GESTIÓN DE USUARIOS (IDEMPOTENTE CON \gexec)
+-- 3. PERMISOS DE CONEXIÓN
 -- ==========================================
--- Nota: Usamos \gexec para poder usar variables psql (:variable) dentro de la lógica condicional.
-
--- 2.1 Crear Usuario ETL si no existe
-SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'etl_user', :'etl_password')
-WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'etl_user')
-\gexec
-
--- 2.2 Crear Usuario Reportes si no existe
-SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'readonly_user', :'readonly_password')
-WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'readonly_user')
-\gexec
-
--- Permisos de conexión básicos
 GRANT CONNECT ON DATABASE :db_name TO :etl_user;
 GRANT CONNECT ON DATABASE :db_name TO :readonly_user;
 
