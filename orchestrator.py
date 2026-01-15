@@ -299,10 +299,11 @@ def gold_all():
 
 def run_all_sales(fecha_desde: str, fecha_hasta: str):
     """Ejecuta el pipeline completo para ventas: Bronze -> Silver -> Gold."""
-    logger.info("PIPELINE MEDALLION: Iniciando pipeline completo de ventas")
+    logger.info(f"PIPELINE MEDALLION: Iniciando pipeline completo ({fecha_desde} - {fecha_hasta})")
     bronze_sales(fecha_desde, fecha_hasta)
     silver_sales(fecha_desde, fecha_hasta)
-    logger.info("PIPELINE MEDALLION: Pipeline completado")
+    gold_fact_ventas(fecha_desde, fecha_hasta)
+    logger.info("PIPELINE MEDALLION: Pipeline completado (Bronze -> Silver -> Gold)")
 
 
 # ==========================================
