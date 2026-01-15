@@ -49,7 +49,7 @@ def generar_rangos_mensuales(fecha_desde: str, fecha_hasta: str):
 
 
 def load_bronze(fecha_desde: str, fecha_hasta: str):
-    """Carga datos de ventas mes a mes entre las fechas especificadas."""
+    """Carga datos de ventas mes a mes entre las fechas especificadas (delete + insert)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
     rangos = generar_rangos_mensuales(fecha_desde, fecha_hasta)
@@ -60,6 +60,16 @@ def load_bronze(fecha_desde: str, fecha_hasta: str):
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
         cursor = raw_conn.cursor()
+
+        # DELETE: Eliminar registros existentes en el rango de fechas
+        delete_query = """
+            DELETE FROM bronze.raw_sales
+            WHERE date_comprobante BETWEEN %s AND %s
+        """
+        cursor.execute(delete_query, (fecha_desde, fecha_hasta))
+        deleted_count = cursor.rowcount
+        raw_conn.commit()
+        logger.info(f"Eliminados {deleted_count} registros existentes en rango {fecha_desde} - {fecha_hasta}")
 
         for i, (mes_desde, mes_hasta) in enumerate(rangos, 1):
             logger.info(f"[{i}/{len(rangos)}] Consultando: {mes_desde} - {mes_hasta}")
