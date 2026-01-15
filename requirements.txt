@@ -16,3 +16,7 @@ python-dotenv>=1.0
 
 # === API CLIENT ===
 # chesserp>=0.1.0
+
+# === TESTING ===
+pytest>=7.0
+pytest-mock>=3.10
