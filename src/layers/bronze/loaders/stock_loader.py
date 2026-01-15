@@ -42,7 +42,6 @@ def generar_rangos_diarios(fecha_desde: str, fecha_hasta: str):
 
     return fechas
 
-
 def load_stock(fecha_desde: str, fecha_hasta: str):
     """Carga datos de stock día a día por depósito (append: mantiene historial)."""
     client = ChessClient.from_env(prefix="EMPRESA1_")

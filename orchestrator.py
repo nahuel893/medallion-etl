@@ -39,6 +39,10 @@ Ejemplos:
 
     # ALL (pipeline completo)
     python orchestrator.py all sales 2025-01-01 2025-12-31
+
+    # PARTIAL REFRESH (mes actual o específico)
+    python orchestrator.py partial-refresh-sales           # Mes actual
+    python orchestrator.py partial-refresh-sales 2025-01   # Mes específico
 """
 import sys
 from pathlib import Path
@@ -302,8 +306,73 @@ def run_all_sales(fecha_desde: str, fecha_hasta: str):
 
 
 # ==========================================
+# PARTIAL REFRESH
+# ==========================================
+
+def partial_refresh_sales(mes: str = None):
+    """
+    Ejecuta partial refresh de ventas para el mes indicado.
+    Borra y recarga el mes completo en Bronze -> Silver -> Gold.
+
+    Args:
+        mes: Formato 'YYYY-MM' o None para mes actual
+
+    Ejemplos:
+        partial_refresh_sales()           # Mes actual
+        partial_refresh_sales('2025-01')  # Enero 2025
+    """
+    fecha_desde, fecha_hasta = get_month_range(mes)
+    mes_display = mes or "actual"
+
+    logger.info(f"PARTIAL REFRESH SALES: Iniciando para mes {mes_display} ({fecha_desde} - {fecha_hasta})")
+
+    # Bronze: Borrar y recargar desde API
+    logger.info("  [1/3] Bronze: Extrayendo desde API...")
+    bronze_sales(fecha_desde, fecha_hasta)
+
+    # Silver: Transformar el rango
+    logger.info("  [2/3] Silver: Transformando datos...")
+    silver_sales(fecha_desde, fecha_hasta)
+
+    # Gold: Recargar fact_ventas para el rango
+    logger.info("  [3/3] Gold: Cargando fact_ventas...")
+    gold_fact_ventas(fecha_desde, fecha_hasta)
+
+    logger.info(f"PARTIAL REFRESH SALES: Completado para mes {mes_display}")
+
+
+# ==========================================
 # UTILIDADES
 # ==========================================
+
+def get_month_range(mes: str = None) -> tuple[str, str]:
+    """
+    Retorna (primer_dia, ultimo_dia) del mes en formato ISO.
+
+    Args:
+        mes: Formato 'YYYY-MM' o None para mes actual
+
+    Returns:
+        Tupla (fecha_desde, fecha_hasta) en formato 'YYYY-MM-DD'
+
+    Ejemplos:
+        get_month_range()           → ('2025-01-01', '2025-01-31')
+        get_month_range('2024-12')  → ('2024-12-01', '2024-12-31')
+    """
+    from datetime import date
+    from calendar import monthrange
+
+    if mes:
+        year, month = map(int, mes.split('-'))
+    else:
+        today = date.today()
+        year, month = today.year, today.month
+
+    primer_dia = date(year, month, 1)
+    ultimo_dia = date(year, month, monthrange(year, month)[1])
+
+    return primer_dia.isoformat(), ultimo_dia.isoformat()
+
 
 def print_usage():
     """Muestra el uso del script."""
@@ -316,10 +385,21 @@ def print_usage():
 # ==========================================
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print_usage()
 
     capa = sys.argv[1].lower()
+
+    # partial-refresh-sales no requiere entidad
+    if capa == 'partial-refresh-sales':
+        mes = sys.argv[2] if len(sys.argv) >= 3 and not sys.argv[2].startswith('--') else None
+        partial_refresh_sales(mes)
+        sys.exit(0)
+
+    # Otros comandos requieren entidad
+    if len(sys.argv) < 3:
+        print_usage()
+
     entidad = sys.argv[2].lower()
 
     # ==========================================
@@ -465,5 +545,5 @@ if __name__ == '__main__':
 
     else:
         logger.error(f"Capa '{capa}' no reconocida")
-        logger.error("Capas disponibles: bronze, silver, gold, all")
+        logger.error("Capas disponibles: bronze, silver, gold, all, partial-refresh-sales")
         sys.exit(1)
