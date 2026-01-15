@@ -15,6 +15,7 @@ Ejemplos:
     python orchestrator.py bronze stock 2025-01-01 2025-12-31
     python orchestrator.py bronze depositos
     python orchestrator.py bronze marketing
+    python orchestrator.py bronze masters                       # Todos los maestros
 
     # SILVER (orden recomendado por dependencias)
     python orchestrator.py silver branches           # 1. Sucursales
@@ -27,6 +28,7 @@ Ejemplos:
     python orchestrator.py silver article_groupings  # 8. Agrupaciones de artículos
     python orchestrator.py silver marketing          # 9. Marketing (segmentos, canales, subcanales)
     python orchestrator.py silver sales [fecha_desde] [fecha_hasta] [--full-refresh]
+    python orchestrator.py silver masters            # Todos los maestros (1-9)
 
     # GOLD (orden recomendado)
     python orchestrator.py gold dim_tiempo [fecha_desde] [fecha_hasta]  # 1. Dimensión tiempo
@@ -35,7 +37,8 @@ Ejemplos:
     python orchestrator.py gold dim_articulo                            # 4. Dimensión artículo
     python orchestrator.py gold dim_cliente                             # 5. Dimensión cliente
     python orchestrator.py gold fact_ventas [--full-refresh]            # 6. Fact table ventas
-    python orchestrator.py gold all                                     # Carga todo el esquema estrella
+    python orchestrator.py gold dimensions                              # Solo dimensiones (1-5)
+    python orchestrator.py gold all                                     # Todo (dimensiones + fact)
 
     # ALL (pipeline completo)
     python orchestrator.py all sales 2025-01-01 2025-12-31
@@ -125,6 +128,18 @@ def bronze_marketing():
     logger.info("BRONZE MARKETING: Iniciando carga (full refresh)")
     load_marketing()
     logger.info("BRONZE MARKETING: Completado")
+
+
+def bronze_masters():
+    """Ejecuta la carga de todas las tablas maestras en Bronze (full refresh)."""
+    logger.info("BRONZE MASTERS: Iniciando carga de maestros")
+    bronze_clientes()
+    bronze_staff()
+    bronze_routes()
+    bronze_articles()
+    bronze_depositos()
+    bronze_marketing()
+    logger.info("BRONZE MASTERS: Completado")
 
 
 # ==========================================
@@ -229,6 +244,21 @@ def silver_marketing(full_refresh: bool = True):
     logger.info("SILVER MARKETING: Completado")
 
 
+def silver_masters():
+    """Ejecuta la transformación de todas las tablas maestras en Silver (full refresh)."""
+    logger.info("SILVER MASTERS: Iniciando transformación de maestros")
+    silver_branches()
+    silver_sales_forces()
+    silver_staff()
+    silver_routes()
+    silver_clientes()
+    silver_client_forces()
+    silver_articles()
+    silver_article_groupings()
+    silver_marketing()
+    logger.info("SILVER MASTERS: Completado")
+
+
 # ==========================================
 # GOLD AGGREGATORS
 # ==========================================
@@ -281,14 +311,21 @@ def gold_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
     logger.info("GOLD FACT_VENTAS: Completado")
 
 
-def gold_all():
-    """Carga todas las dimensiones y hechos en orden."""
-    logger.info("GOLD: Iniciando carga de esquema estrella completo")
+def gold_dimensions():
+    """Carga solo las dimensiones (sin fact_ventas)."""
+    logger.info("GOLD DIMENSIONS: Iniciando carga de dimensiones")
     gold_dim_tiempo()
     gold_dim_sucursal()
     gold_dim_vendedor()
     gold_dim_articulo()
     gold_dim_cliente()
+    logger.info("GOLD DIMENSIONS: Completado")
+
+
+def gold_all():
+    """Carga todas las dimensiones y hechos en orden."""
+    logger.info("GOLD: Iniciando carga de esquema estrella completo")
+    gold_dimensions()
     gold_fact_ventas(full_refresh=True)
     logger.info("GOLD: Esquema estrella completado")
 
@@ -439,9 +476,12 @@ if __name__ == '__main__':
         elif entidad == 'marketing':
             bronze_marketing()
 
+        elif entidad == 'masters':
+            bronze_masters()
+
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para bronze")
-            logger.error("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing")
+            logger.error("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing, masters")
             sys.exit(1)
 
     # ==========================================
@@ -490,9 +530,12 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv or True
             silver_marketing(full_refresh)
 
+        elif entidad == 'masters':
+            silver_masters()
+
         else:
             logger.error(f"Entidad '{entidad}' no tiene transformer en silver")
-            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing")
+            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing, masters")
             sys.exit(1)
 
     # ==========================================
@@ -522,12 +565,15 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv
             gold_fact_ventas(fecha_desde, fecha_hasta, full_refresh)
 
+        elif entidad == 'dimensions':
+            gold_dimensions()
+
         elif entidad == 'all':
             gold_all()
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para gold")
-            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, all")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, dimensions, all")
             sys.exit(1)
 
     # ==========================================

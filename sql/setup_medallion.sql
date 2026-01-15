@@ -126,7 +126,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA silver GRANT ALL PRIVILEGES ON TABLES TO :etl
 CREATE TABLE IF NOT EXISTS silver.clients (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bronze_id INTEGER REFERENCES bronze.raw_clients(id),
+    bronze_id INTEGER,  -- Referencia a bronze.raw_clients (sin FK para independencia de capas)
 
     -- === DATOS PRINCIPALES ===
     id_cliente INTEGER NOT NULL,
@@ -213,7 +213,7 @@ CREATE INDEX IF NOT EXISTS idx_sales_forces_fuerza ON silver.sales_forces(id_fue
 CREATE TABLE IF NOT EXISTS silver.staff (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bronze_id INTEGER REFERENCES bronze.raw_staff(id),
+    bronze_id INTEGER,  -- Referencia a bronze.raw_staff (sin FK para independencia de capas)
 
     id_personal INTEGER NOT NULL UNIQUE,
     des_personal VARCHAR(150),
@@ -239,7 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_staff_superior ON silver.staff(id_personal_superi
 CREATE TABLE IF NOT EXISTS silver.routes (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bronze_id INTEGER REFERENCES bronze.raw_routes(id),
+    bronze_id INTEGER,  -- Referencia a bronze.raw_routes (sin FK para independencia de capas)
 
     id_ruta INTEGER NOT NULL,
     des_ruta VARCHAR(150),
@@ -305,7 +305,7 @@ CREATE INDEX IF NOT EXISTS idx_client_forces_activas ON silver.client_forces(fec
 CREATE TABLE IF NOT EXISTS silver.articles (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bronze_id INTEGER REFERENCES bronze.raw_articles(id),
+    bronze_id INTEGER,  -- Referencia a bronze.raw_articles (sin FK para independencia de capas)
 
     -- === DATOS PRINCIPALES ===
     id_articulo INTEGER NOT NULL UNIQUE,
@@ -422,7 +422,7 @@ CREATE INDEX IF NOT EXISTS idx_mkt_subchannels_canal ON silver.marketing_subchan
 CREATE TABLE IF NOT EXISTS silver.fact_ventas (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bronze_id INTEGER REFERENCES bronze.raw_sales(id),
+    bronze_id INTEGER,  -- Referencia a bronze.raw_sales (sin FK para independencia de capas)
 
     -- === IDENTIFICACIÓN DOCUMENTO ===
     id_empresa INTEGER NOT NULL,
