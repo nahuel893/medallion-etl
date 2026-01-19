@@ -28,6 +28,7 @@ Ejemplos:
     python orchestrator.py silver article_groupings  # 8. Agrupaciones de artículos
     python orchestrator.py silver marketing          # 9. Marketing (segmentos, canales, subcanales)
     python orchestrator.py silver sales [fecha_desde] [fecha_hasta] [--full-refresh]
+    python orchestrator.py silver stock [fecha_desde] [fecha_hasta] [--full-refresh]
     python orchestrator.py silver masters            # Todos los maestros (1-9)
 
     # GOLD (orden recomendado)
@@ -36,9 +37,10 @@ Ejemplos:
     python orchestrator.py gold dim_vendedor                            # 3. Dimensión vendedor
     python orchestrator.py gold dim_articulo                            # 4. Dimensión artículo
     python orchestrator.py gold dim_cliente                             # 5. Dimensión cliente
-    python orchestrator.py gold fact_ventas [--full-refresh]            # 6. Fact table ventas
+    python orchestrator.py gold fact_ventas [fecha_desde] [fecha_hasta] [--full-refresh]
+    python orchestrator.py gold fact_stock [fecha_desde] [fecha_hasta] [--full-refresh]
     python orchestrator.py gold dimensions                              # Solo dimensiones (1-5)
-    python orchestrator.py gold all                                     # Todo (dimensiones + fact)
+    python orchestrator.py gold all                                     # Todo (dimensiones + fact_ventas)
 
     # ALL (pipeline completo)
     python orchestrator.py all sales 2025-01-01 2025-12-31
@@ -244,6 +246,23 @@ def silver_marketing(full_refresh: bool = True):
     logger.info("SILVER MARKETING: Completado")
 
 
+def silver_stock(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
+    """Ejecuta la transformación de stock a Silver."""
+    from layers.silver.transformers.stock_transformer import transform_stock
+
+    logger.info("SILVER STOCK: Iniciando transformación")
+    if full_refresh:
+        logger.info("  Modo: Full Refresh")
+        transform_stock(full_refresh=True)
+    elif fecha_desde and fecha_hasta:
+        logger.info(f"  Rango: {fecha_desde} - {fecha_hasta}")
+        transform_stock(fecha_desde, fecha_hasta)
+    else:
+        logger.info("  Transformando todos los datos disponibles")
+        transform_stock()
+    logger.info("SILVER STOCK: Completado")
+
+
 def silver_masters():
     """Ejecuta la transformación de todas las tablas maestras en Silver (full refresh)."""
     logger.info("SILVER MASTERS: Iniciando transformación de maestros")
@@ -309,6 +328,14 @@ def gold_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
     logger.info("GOLD FACT_VENTAS: Cargando hechos")
     load_fact_ventas(fecha_desde, fecha_hasta, full_refresh)
     logger.info("GOLD FACT_VENTAS: Completado")
+
+
+def gold_fact_stock(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: bool = False):
+    """Carga fact table de stock."""
+    from layers.gold.aggregators import load_fact_stock
+    logger.info("GOLD FACT_STOCK: Cargando hechos")
+    load_fact_stock(fecha_desde, fecha_hasta, full_refresh)
+    logger.info("GOLD FACT_STOCK: Completado")
 
 
 def gold_dimensions():
@@ -530,12 +557,18 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv or True
             silver_marketing(full_refresh)
 
+        elif entidad == 'stock':
+            fecha_desde = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            fecha_hasta = sys.argv[4] if len(sys.argv) > 4 and not sys.argv[4].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            silver_stock(fecha_desde, fecha_hasta, full_refresh)
+
         elif entidad == 'masters':
             silver_masters()
 
         else:
             logger.error(f"Entidad '{entidad}' no tiene transformer en silver")
-            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing, masters")
+            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing, stock, masters")
             sys.exit(1)
 
     # ==========================================
@@ -565,6 +598,12 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv
             gold_fact_ventas(fecha_desde, fecha_hasta, full_refresh)
 
+        elif entidad == 'fact_stock':
+            fecha_desde = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            fecha_hasta = sys.argv[4] if len(sys.argv) > 4 and not sys.argv[4].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_fact_stock(fecha_desde, fecha_hasta, full_refresh)
+
         elif entidad == 'dimensions':
             gold_dimensions()
 
@@ -573,7 +612,7 @@ if __name__ == '__main__':
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para gold")
-            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, dimensions, all")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, dimensions, all")
             sys.exit(1)
 
     # ==========================================

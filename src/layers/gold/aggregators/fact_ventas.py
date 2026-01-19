@@ -27,13 +27,8 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
 
         cursor.execute("SET work_mem = '512MB'")
 
-        # Determinar modo de carga
-        if full_refresh:
-            logger.debug("Full refresh: eliminando todos los datos...")
-            cursor.execute("DELETE FROM gold.fact_ventas")
-            where_clause = ""
-            params = None
-        elif fecha_desde and fecha_hasta:
+        # Determinar modo de carga (fechas tienen prioridad sobre full_refresh)
+        if fecha_desde and fecha_hasta:
             logger.debug(f"Carga incremental: {fecha_desde} a {fecha_hasta}")
             cursor.execute(
                 "DELETE FROM gold.fact_ventas WHERE fecha_comprobante BETWEEN %s AND %s",
@@ -41,6 +36,11 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
             )
             where_clause = "WHERE fecha_comprobante BETWEEN %s AND %s"
             params = (fecha_desde, fecha_hasta)
+        elif full_refresh:
+            logger.debug("Full refresh: eliminando todos los datos...")
+            cursor.execute("DELETE FROM gold.fact_ventas")
+            where_clause = ""
+            params = None
         else:
             logger.debug("Carga completa (sin filtro de fecha)...")
             cursor.execute("DELETE FROM gold.fact_ventas")

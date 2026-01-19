@@ -538,6 +538,34 @@ CREATE INDEX IF NOT EXISTS idx_silver_ventas_fuerza ON silver.fact_ventas(id_fue
 CREATE INDEX IF NOT EXISTS idx_silver_ventas_documento ON silver.fact_ventas(id_documento, serie, nro_doc);
 CREATE INDEX IF NOT EXISTS idx_silver_ventas_bronze ON silver.fact_ventas(bronze_id);
 
+-- Tabla de stock (fact table)
+CREATE TABLE IF NOT EXISTS silver.fact_stock (
+    id SERIAL PRIMARY KEY,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Dimensiones
+    date_stock DATE NOT NULL,
+    id_deposito INTEGER NOT NULL,
+    id_almacen INTEGER,
+    id_articulo INTEGER NOT NULL,
+
+    -- Descripciones (desnormalizado para consultas rápidas)
+    ds_articulo VARCHAR(200),
+
+    -- Métricas
+    cant_bultos NUMERIC(15,4),
+    cant_unidades NUMERIC(15,4),
+
+    -- Lote
+    fec_vto_lote DATE
+);
+
+CREATE INDEX IF NOT EXISTS idx_silver_stock_fecha ON silver.fact_stock(date_stock);
+CREATE INDEX IF NOT EXISTS idx_silver_stock_deposito ON silver.fact_stock(id_deposito);
+CREATE INDEX IF NOT EXISTS idx_silver_stock_articulo ON silver.fact_stock(id_articulo);
+CREATE INDEX IF NOT EXISTS idx_silver_stock_fecha_deposito ON silver.fact_stock(date_stock, id_deposito);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_silver_stock_unique ON silver.fact_stock(date_stock, id_deposito, id_articulo);
+
 -- Capa GOLD
 GRANT USAGE, CREATE ON SCHEMA gold TO :etl_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA gold TO :etl_user;
@@ -673,6 +701,25 @@ CREATE INDEX IF NOT EXISTS idx_gold_fact_cliente ON gold.fact_ventas(id_cliente)
 CREATE INDEX IF NOT EXISTS idx_gold_fact_articulo ON gold.fact_ventas(id_articulo);
 CREATE INDEX IF NOT EXISTS idx_gold_fact_vendedor ON gold.fact_ventas(id_vendedor);
 CREATE INDEX IF NOT EXISTS idx_gold_fact_sucursal ON gold.fact_ventas(id_sucursal);
+
+-- Fact Table Stock
+CREATE TABLE IF NOT EXISTS gold.fact_stock (
+    id SERIAL PRIMARY KEY,
+
+    -- Dimensiones (FK a dimensiones)
+    date_stock DATE NOT NULL,
+    id_deposito INTEGER NOT NULL,
+    id_articulo INTEGER NOT NULL,
+
+    -- Métricas
+    cant_bultos NUMERIC(15,4),
+    cant_unidades NUMERIC(15,4)
+);
+
+CREATE INDEX IF NOT EXISTS idx_gold_stock_fecha ON gold.fact_stock(date_stock);
+CREATE INDEX IF NOT EXISTS idx_gold_stock_deposito ON gold.fact_stock(id_deposito);
+CREATE INDEX IF NOT EXISTS idx_gold_stock_articulo ON gold.fact_stock(id_articulo);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_gold_stock_unique ON gold.fact_stock(date_stock, id_deposito, id_articulo);
 
 -- ==========================================
 -- 4. PERMISOS PARA EL USUARIO REPORTING (El Consumidor)

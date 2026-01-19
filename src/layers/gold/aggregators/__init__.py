@@ -4,6 +4,7 @@ from layers.gold.aggregators.dim_vendedor import load_dim_vendedor
 from layers.gold.aggregators.dim_articulo import load_dim_articulo
 from layers.gold.aggregators.dim_cliente import load_dim_cliente
 from layers.gold.aggregators.fact_ventas import load_fact_ventas
+from layers.gold.aggregators.fact_stock import load_fact_stock
 
 __all__ = [
     'load_dim_tiempo',
@@ -12,4 +13,5 @@ __all__ = [
     'load_dim_articulo',
     'load_dim_cliente',
     'load_fact_ventas',
+    'load_fact_stock',
 ]

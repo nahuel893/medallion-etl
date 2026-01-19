@@ -45,17 +45,17 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
 
         where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
 
-        # DELETE según el modo
+        # DELETE según el modo (fechas tienen prioridad sobre full_refresh)
         delete_start = datetime.now()
-        if full_refresh:
-            logger.debug("Full refresh: eliminando todos los datos de silver.fact_ventas...")
-            cursor.execute("DELETE FROM silver.fact_ventas")
-        elif fecha_desde and fecha_hasta:
+        if fecha_desde and fecha_hasta:
             logger.debug(f"Eliminando datos existentes en silver para el rango {fecha_desde} - {fecha_hasta}...")
             cursor.execute(
                 "DELETE FROM silver.fact_ventas WHERE fecha_comprobante >= %s AND fecha_comprobante <= %s",
                 (fecha_desde, fecha_hasta)
             )
+        elif full_refresh:
+            logger.debug("Full refresh: eliminando todos los datos de silver.fact_ventas...")
+            cursor.execute("DELETE FROM silver.fact_ventas")
 
         if full_refresh or (fecha_desde and fecha_hasta):
             delete_time = (datetime.now() - delete_start).total_seconds()
