@@ -721,17 +721,82 @@ CREATE INDEX IF NOT EXISTS idx_gold_stock_deposito ON gold.fact_stock(id_deposit
 CREATE INDEX IF NOT EXISTS idx_gold_stock_articulo ON gold.fact_stock(id_articulo);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_gold_stock_unique ON gold.fact_stock(date_stock, id_deposito, id_articulo);
 
+-- Tablas de Cobertura (agregaciones mensuales)
+
+-- Cobertura por Preventista/Ruta/Sucursal/Marca
+CREATE TABLE IF NOT EXISTS gold.cob_preventista_marca (
+    id SERIAL PRIMARY KEY,
+    periodo DATE NOT NULL,  -- Primer día del mes
+    id_fuerza_ventas INTEGER NOT NULL,
+    id_vendedor INTEGER,
+    id_ruta INTEGER,
+    id_sucursal INTEGER,
+    ds_sucursal VARCHAR(100),
+    marca VARCHAR(150),
+    clientes_compradores INTEGER,
+    volumen_total NUMERIC(15,4)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cob_prev_marca_periodo ON gold.cob_preventista_marca(periodo);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_marca_fuerza ON gold.cob_preventista_marca(id_fuerza_ventas);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_marca_vendedor ON gold.cob_preventista_marca(id_vendedor);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_marca_sucursal ON gold.cob_preventista_marca(id_sucursal);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cob_prev_marca_unique ON gold.cob_preventista_marca(periodo, id_fuerza_ventas, id_vendedor, id_ruta, id_sucursal, marca);
+
+-- Cobertura por Sucursal/Marca
+CREATE TABLE IF NOT EXISTS gold.cob_sucursal_marca (
+    id SERIAL PRIMARY KEY,
+    periodo DATE NOT NULL,
+    id_fuerza_ventas INTEGER NOT NULL,
+    id_sucursal INTEGER,
+    ds_sucursal VARCHAR(100),
+    marca VARCHAR(150),
+    clientes_compradores INTEGER,
+    volumen_total NUMERIC(15,4)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cob_suc_marca_periodo ON gold.cob_sucursal_marca(periodo);
+CREATE INDEX IF NOT EXISTS idx_cob_suc_marca_fuerza ON gold.cob_sucursal_marca(id_fuerza_ventas);
+CREATE INDEX IF NOT EXISTS idx_cob_suc_marca_sucursal ON gold.cob_sucursal_marca(id_sucursal);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cob_suc_marca_unique ON gold.cob_sucursal_marca(periodo, id_fuerza_ventas, id_sucursal, marca);
+
+-- Cobertura por Preventista/Ruta/Sucursal/Genérico
+CREATE TABLE IF NOT EXISTS gold.cob_preventista_generico (
+    id SERIAL PRIMARY KEY,
+    periodo DATE NOT NULL,
+    id_fuerza_ventas INTEGER NOT NULL,
+    id_vendedor INTEGER,
+    id_ruta INTEGER,
+    id_sucursal INTEGER,
+    ds_sucursal VARCHAR(100),
+    generico VARCHAR(150),
+    clientes_compradores INTEGER,
+    volumen_total NUMERIC(15,4)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cob_prev_gen_periodo ON gold.cob_preventista_generico(periodo);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_gen_fuerza ON gold.cob_preventista_generico(id_fuerza_ventas);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_gen_vendedor ON gold.cob_preventista_generico(id_vendedor);
+CREATE INDEX IF NOT EXISTS idx_cob_prev_gen_sucursal ON gold.cob_preventista_generico(id_sucursal);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cob_prev_gen_unique ON gold.cob_preventista_generico(periodo, id_fuerza_ventas, id_vendedor, id_ruta, id_sucursal, generico);
+
 -- ==========================================
--- 4. PERMISOS PARA EL USUARIO REPORTING (El Consumidor)
+-- 4. PERMISOS FINALES
 -- ==========================================
 
--- Solo permiso de entrada (USAGE) a Gold
+-- ETL User: permisos completos sobre todas las tablas creadas
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA bronze TO :etl_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA silver TO :etl_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA gold TO :etl_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA bronze TO :etl_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA silver TO :etl_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA gold TO :etl_user;
+
+-- Readonly User: solo lectura en Gold
 GRANT USAGE ON SCHEMA gold TO :readonly_user;
-
--- Solo lectura (SELECT) en las tablas actuales
 GRANT SELECT ON ALL TABLES IN SCHEMA gold TO :readonly_user;
 
--- Asegurar que pueda leer tablas futuras creadas por el ETL
+-- Permisos para tablas futuras
 ALTER DEFAULT PRIVILEGES IN SCHEMA gold GRANT SELECT ON TABLES TO :readonly_user;
 
 -- Opcional: Revocar acceso a public por seguridad

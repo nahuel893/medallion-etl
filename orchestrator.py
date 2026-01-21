@@ -39,6 +39,10 @@ Ejemplos:
     python orchestrator.py gold dim_cliente                             # 5. Dimensión cliente
     python orchestrator.py gold fact_ventas [fecha_desde] [fecha_hasta] [--full-refresh]
     python orchestrator.py gold fact_stock [fecha_desde] [fecha_hasta] [--full-refresh]
+    python orchestrator.py gold cobertura [YYYY-MM] [--full-refresh]    # Todas las coberturas
+    python orchestrator.py gold cob_preventista_marca [YYYY-MM]         # Por preventista/ruta/marca
+    python orchestrator.py gold cob_sucursal_marca [YYYY-MM]            # Por sucursal/marca
+    python orchestrator.py gold cob_preventista_generico [YYYY-MM]      # Por preventista/ruta/genérico
     python orchestrator.py gold dimensions                              # Solo dimensiones (1-5)
     python orchestrator.py gold all                                     # Todo (dimensiones + fact_ventas)
 
@@ -338,6 +342,38 @@ def gold_fact_stock(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
     logger.info("GOLD FACT_STOCK: Completado")
 
 
+def gold_cobertura(periodo: str = '', full_refresh: bool = False):
+    """Carga todas las tablas de cobertura."""
+    from layers.gold.aggregators import load_cobertura
+    logger.info("GOLD COBERTURA: Cargando tablas de cobertura")
+    load_cobertura(periodo, full_refresh)
+    logger.info("GOLD COBERTURA: Completado")
+
+
+def gold_cob_preventista_marca(periodo: str = '', full_refresh: bool = False):
+    """Carga cobertura por preventista/ruta/marca."""
+    from layers.gold.aggregators import load_cob_preventista_marca
+    logger.info("GOLD COB_PREVENTISTA_MARCA: Cargando")
+    load_cob_preventista_marca(periodo, full_refresh)
+    logger.info("GOLD COB_PREVENTISTA_MARCA: Completado")
+
+
+def gold_cob_sucursal_marca(periodo: str = '', full_refresh: bool = False):
+    """Carga cobertura por sucursal/marca."""
+    from layers.gold.aggregators import load_cob_sucursal_marca
+    logger.info("GOLD COB_SUCURSAL_MARCA: Cargando")
+    load_cob_sucursal_marca(periodo, full_refresh)
+    logger.info("GOLD COB_SUCURSAL_MARCA: Completado")
+
+
+def gold_cob_preventista_generico(periodo: str = '', full_refresh: bool = False):
+    """Carga cobertura por preventista/ruta/genérico."""
+    from layers.gold.aggregators import load_cob_preventista_generico
+    logger.info("GOLD COB_PREVENTISTA_GENERICO: Cargando")
+    load_cob_preventista_generico(periodo, full_refresh)
+    logger.info("GOLD COB_PREVENTISTA_GENERICO: Completado")
+
+
 def gold_dimensions():
     """Carga solo las dimensiones (sin fact_ventas)."""
     logger.info("GOLD DIMENSIONS: Iniciando carga de dimensiones")
@@ -604,6 +640,26 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv
             gold_fact_stock(fecha_desde, fecha_hasta, full_refresh)
 
+        elif entidad == 'cobertura':
+            periodo = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_cobertura(periodo, full_refresh)
+
+        elif entidad == 'cob_preventista_marca':
+            periodo = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_cob_preventista_marca(periodo, full_refresh)
+
+        elif entidad == 'cob_sucursal_marca':
+            periodo = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_cob_sucursal_marca(periodo, full_refresh)
+
+        elif entidad == 'cob_preventista_generico':
+            periodo = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_cob_preventista_generico(periodo, full_refresh)
+
         elif entidad == 'dimensions':
             gold_dimensions()
 
@@ -612,7 +668,7 @@ if __name__ == '__main__':
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para gold")
-            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, dimensions, all")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, cobertura, cob_preventista_marca, cob_sucursal_marca, cob_preventista_generico, dimensions, all")
             sys.exit(1)
 
     # ==========================================
