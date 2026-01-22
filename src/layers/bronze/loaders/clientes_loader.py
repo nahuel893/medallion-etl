@@ -12,7 +12,7 @@ def load_clientes():
 
     logger.info("Consultando clientes desde API...")
 
-    clientes = client.get_customers(raw=True)
+    clientes = client.get_customers(raw=True, anulado=True)
 
     if not clientes:
         logger.warning("Sin datos de clientes")
