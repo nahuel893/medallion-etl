@@ -79,7 +79,6 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
         # INSERT INTO SELECT - NORMALIZADO (solo IDs, sin descripciones)
         insert_query = f"""
             INSERT INTO silver.fact_ventas (
-                bronze_id,
                 -- Identificación documento
                 id_empresa, id_documento, letra, serie, nro_doc, anulado,
                 -- Fechas
@@ -114,7 +113,6 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 id_rechazo, informado, regimen_fiscal
             )
             SELECT
-                id,
                 -- === IDENTIFICACIÓN DOCUMENTO ===
                 NULLIF(data_raw->>'idEmpresa', '')::integer,
                 data_raw->>'idDocumento',

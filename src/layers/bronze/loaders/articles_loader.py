@@ -13,7 +13,7 @@ def load_articles():
 
     logger.info("Consultando artículos desde API...")
 
-    articles = client.get_articles(raw=True)
+    articles = client.get_articles(raw=True, anulado=True)
 
     if not articles:
         logger.warning("Sin datos de artículos")

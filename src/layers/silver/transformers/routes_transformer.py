@@ -47,7 +47,6 @@ def transform_routes(full_refresh: bool = True):
 
         insert_query = """
             INSERT INTO silver.routes (
-                bronze_id,
                 id_ruta,
                 des_ruta,
                 dias_visita,
@@ -66,7 +65,6 @@ def transform_routes(full_refresh: bool = True):
                 id_personal
             )
             SELECT
-                id,
                 NULLIF(data_raw->>'idRuta', '')::integer,
                 data_raw->>'desRuta',
                 data_raw->>'diasVisita',

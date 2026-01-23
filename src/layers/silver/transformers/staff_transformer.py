@@ -46,7 +46,6 @@ def transform_staff(full_refresh: bool = True):
 
         insert_query = """
             INSERT INTO silver.staff (
-                bronze_id,
                 id_personal,
                 des_personal,
                 cargo,
@@ -60,7 +59,6 @@ def transform_staff(full_refresh: bool = True):
                 id_personal_superior
             )
             SELECT DISTINCT ON (NULLIF(data_raw->>'idPersonal', '')::integer)
-                id,
                 NULLIF(data_raw->>'idPersonal', '')::integer,
                 data_raw->>'desPersonal',
                 data_raw->>'cargo',

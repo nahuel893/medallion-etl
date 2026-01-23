@@ -57,13 +57,11 @@ def transform_clients(full_refresh: bool = True):
             WITH alias_vigente AS (
                 -- Extraer datos fiscales del alias vigente (primer elemento de eClialias)
                 SELECT
-                    id AS bronze_id,
                     data_raw,
                     (data_raw->'eClialias'->0) AS alias
                 FROM bronze.raw_clients
             )
             INSERT INTO silver.clients (
-                bronze_id,
                 -- Datos principales
                 id_cliente, razon_social, fantasia, id_ramo, desc_ramo, anulado,
                 calle, id_localidad, desc_localidad, id_provincia, desc_provincia,
@@ -83,8 +81,6 @@ def transform_clients(full_refresh: bool = True):
                 telefono_fijo, telefono_movil, email
             )
             SELECT
-                a.bronze_id,
-
                 -- === DATOS PRINCIPALES ===
                 NULLIF(a.data_raw->>'idCliente', '')::integer,
                 a.alias->>'razonSocial',

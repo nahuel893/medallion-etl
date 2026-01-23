@@ -55,7 +55,6 @@ def transform_articles(full_refresh: bool = True):
         # INSERT INTO SELECT - Solo datos core (sin agrupaciones)
         insert_query = """
             INSERT INTO silver.articles (
-                bronze_id,
                 -- Datos principales
                 id_articulo, des_articulo, des_corta_articulo, anulado, fecha_alta,
                 -- Características
@@ -71,8 +70,6 @@ def transform_articles(full_refresh: bool = True):
                 peso_bulto, bultos_pallet, pisos_pallet
             )
             SELECT
-                a.id,
-
                 -- === DATOS PRINCIPALES ===
                 NULLIF(a.data_raw->>'idArticulo', '')::integer,
                 a.data_raw->>'desArticulo',

@@ -29,13 +29,11 @@ class FactVentas(Base):
         Index('idx_silver_ventas_articulo', 'id_articulo'),
         Index('idx_silver_ventas_vendedor', 'id_vendedor'),
         Index('idx_silver_ventas_documento', 'id_documento', 'serie', 'nro_doc'),
-        Index('idx_silver_ventas_bronze', 'bronze_id'),
         {'schema': 'silver'}
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     processed_at = Column(DateTime, server_default=func.now())
-    bronze_id = Column(Integer, ForeignKey('bronze.raw_sales.id'))
 
     # === IDENTIFICACIÓN DOCUMENTO ===
     id_empresa = Column(Integer, nullable=False)              # idEmpresa
