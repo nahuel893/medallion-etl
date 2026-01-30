@@ -75,8 +75,7 @@ def load_cob_preventista_marca(periodo: str = '', full_refresh: bool = False):
             LEFT JOIN gold.dim_cliente dc ON fv.id_cliente = dc.id_cliente
                 AND fv.id_sucursal = dc.id_sucursal
             {where_clause}
-            {"AND" if where_clause else "WHERE"} fv.anulado = FALSE
-            AND fv.cantidades_total > 0
+            {"AND" if where_clause else "WHERE"} fv.cantidades_total > 0
             AND dv.id_fuerza_ventas IS NOT NULL
             GROUP BY 1, 2, 3, 4, 5, 6, 7
             ON CONFLICT (periodo, id_fuerza_ventas, id_vendedor, id_ruta, id_sucursal, marca)
@@ -146,8 +145,7 @@ def load_cob_sucursal_marca(periodo: str = '', full_refresh: bool = False):
             LEFT JOIN gold.dim_sucursal ds ON fv.id_sucursal = ds.id_sucursal
             LEFT JOIN gold.dim_articulo da ON fv.id_articulo = da.id_articulo
             {where_clause}
-            {"AND" if where_clause else "WHERE"} fv.anulado = FALSE
-            AND fv.cantidades_total > 0
+            {"AND" if where_clause else "WHERE"} fv.cantidades_total > 0
             AND dv.id_fuerza_ventas IS NOT NULL
             GROUP BY 1, 2, 3, 4, 5
             ON CONFLICT (periodo, id_fuerza_ventas, id_sucursal, marca)
@@ -226,8 +224,7 @@ def load_cob_preventista_generico(periodo: str = '', full_refresh: bool = False)
             LEFT JOIN gold.dim_cliente dc ON fv.id_cliente = dc.id_cliente
                 AND fv.id_sucursal = dc.id_sucursal
             {where_clause}
-            {"AND" if where_clause else "WHERE"} fv.anulado = FALSE
-            AND fv.cantidades_total > 0
+            {"AND" if where_clause else "WHERE"} fv.cantidades_total > 0
             AND dv.id_fuerza_ventas IS NOT NULL
             GROUP BY 1, 2, 3, 4, 5, 6, 7
             ON CONFLICT (periodo, id_fuerza_ventas, id_vendedor, id_ruta, id_sucursal, generico)
