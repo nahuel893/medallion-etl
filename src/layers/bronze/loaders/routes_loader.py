@@ -8,18 +8,25 @@ logger = get_logger(__name__)
 
 
 def load_routes():
-    """Carga datos de rutas (full refresh: DELETE + INSERT)."""
+    """Carga datos de rutas de FV1 y FV4 (full refresh: DELETE + INSERT)."""
+    # Future refact, the function load N routes force_sales
     client = ChessClient.from_env(prefix="EMPRESA1_")
 
-    logger.info("Consultando rutas desde API...")
+    fuerzas = [1, 4]
+    all_routes = []
 
-    routes = client.get_routes(raw=True)
+    for fv in fuerzas:
+        logger.info(f"Consultando rutas FV{fv} desde API...")
+        routes = client.get_routes(fuerza_venta=fv, raw=True)
+        if routes:
+            logger.info(f"Obtenidas {len(routes)} rutas FV{fv}")
+            all_routes.extend(routes)
+        else:
+            logger.warning(f"Sin datos de rutas para FV{fv}")
 
-    if not routes:
+    if not all_routes:
         logger.warning("Sin datos de rutas")
         return
-
-    logger.info(f"Obtenidos {len(routes)} rutas")
 
     with engine.connect() as conn:
         raw_conn = conn.connection.dbapi_connection
@@ -32,7 +39,7 @@ def load_routes():
         logger.debug("Insertando datos nuevos...")
         data = [
             (json.dumps(route), 'API_CHESS_ERP')
-            for route in routes
+            for route in all_routes
         ]
 
         query = """
@@ -50,7 +57,7 @@ def load_routes():
         raw_conn.commit()
         cursor.close()
 
-    logger.info(f"Insertados {len(routes)} rutas en bronze.raw_routes")
+    logger.info(f"Insertados {len(all_routes)} rutas en bronze.raw_routes")
 
 
 if __name__ == '__main__':

@@ -82,8 +82,7 @@ def transform_routes(full_refresh: bool = True):
                 NULLIF(data_raw->>'idFuerzaVentas', '')::integer,
                 NULLIF(data_raw->>'idPersonal', '')::integer
             FROM bronze.raw_routes
-            WHERE NULLIF(data_raw->>'idRuta', '') IS NOT NULL
-            ON CONFLICT (id_ruta, fecha_desde) DO UPDATE SET
+            ON CONFLICT (id_ruta, id_fuerza_ventas, fecha_desde) DO UPDATE SET
                 des_ruta = EXCLUDED.des_ruta,
                 dias_visita = EXCLUDED.dias_visita,
                 semana_visita = EXCLUDED.semana_visita,
@@ -96,7 +95,6 @@ def transform_routes(full_refresh: bool = True):
                 fecha_hasta = EXCLUDED.fecha_hasta,
                 anulado = EXCLUDED.anulado,
                 id_sucursal = EXCLUDED.id_sucursal,
-                id_fuerza_ventas = EXCLUDED.id_fuerza_ventas,
                 id_personal = EXCLUDED.id_personal,
                 processed_at = CURRENT_TIMESTAMP
         """

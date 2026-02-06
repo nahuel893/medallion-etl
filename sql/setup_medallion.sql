@@ -257,8 +257,8 @@ CREATE TABLE IF NOT EXISTS silver.routes (
     id_fuerza_ventas INTEGER,
     id_personal INTEGER,
 
-    -- Una ruta puede tener múltiples vigencias
-    UNIQUE(id_ruta, fecha_desde)
+    -- Una ruta puede tener múltiples vigencias por fuerza de venta
+    UNIQUE(id_ruta, id_fuerza_ventas, fecha_desde)
 );
 
 CREATE INDEX IF NOT EXISTS idx_routes_ruta ON silver.routes(id_ruta);
