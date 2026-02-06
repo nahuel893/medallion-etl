@@ -101,7 +101,7 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 -- Precios
                 precio_unitario_bruto, precio_unitario_neto, bonificacion, precio_compra_bruto, precio_compra_neto,
                 -- Subtotales
-                subtotal_bruto, subtotal_bonificado, subtotal_neto, subtotal_final,
+                subtotal_bruto, subtotal_bonificado, subtotal_neto, subtotal_final, facturacion_neta,
                 -- Impuestos
                 iva21, iva27, iva105, iva2, internos, per3337, percepcion212, percepcion_iibb,
                 pers_iibb_d, pers_iibb_r, cod_prov_iibb,
@@ -187,6 +187,9 @@ def transform_sales(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 NULLIF(data_raw->>'subtotalBonificado', '')::numeric(15,4),
                 NULLIF(data_raw->>'subtotalNeto', '')::numeric(15,4),
                 NULLIF(data_raw->>'subtotalFinal', '')::numeric(15,4),
+                -- facturacion_neta = cantidades_total * abs(precio_unitario_bruto)
+                NULLIF(data_raw->>'cantidadesTotal', '')::numeric(15,4) *
+                    ABS(NULLIF(data_raw->>'precioventabr', '')::numeric(15,4)),
 
                 -- === IMPUESTOS ===
                 NULLIF(data_raw->>'iva21', '')::numeric(15,4),

@@ -493,6 +493,7 @@ CREATE TABLE IF NOT EXISTS silver.fact_ventas (
     subtotal_bonificado NUMERIC(15,4),
     subtotal_neto NUMERIC(15,4),
     subtotal_final NUMERIC(15,4),
+    facturacion_neta NUMERIC(15,4),  -- cantidades_total * abs(precio_unitario_bruto)
 
     -- === IMPUESTOS ===
     iva21 NUMERIC(15,4),
