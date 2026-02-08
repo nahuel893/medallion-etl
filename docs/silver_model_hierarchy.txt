@@ -1,0 +1,165 @@
+================================================================================
+                    MODELO SILVER - JERARQUIA Y DEPENDENCIAS
+                         Proyecto: medallion-etl
+================================================================================
+
+                    +---------------------------------------------+
+                    |           TABLAS INDEPENDIENTES             |
+                    |         (sin FKs a otras Silver)            |
+                    +---------------------------------------------+
+                                        |
+        +-------------------------------+-------------------------------+
+        |                               |                               |
+        v                               v                               v
++---------------+              +---------------+              +---------------+
+|   branches    |              | sales_forces  |              |   articles    |
+| (sucursales)  |              |(fuerzas venta)|              |  (articulos)  |
+|---------------|              |---------------|              |---------------|
+| id_sucursal   |              |id_fuerza_venta|              | id_articulo   |
+| descripcion   |              |des_fuerza_vent|              | des_articulo  |
++-------+-------+              +-------+-------+              | anulado, etc. |
+        |                              |                      +-------+-------+
+        |                              |                              |
+        v                              v                              v
++-----------------------------------------------+          +-----------------+
+|                    staff                      |          |article_groupings|
+|              (preventistas/personal)          |          | (agrupaciones)  |
+|-----------------------------------------------|          |-----------------|
+| id_personal (PK)                              |          | id_articulo (FK)|
+| id_sucursal -> branches                       |          | id_forma_agrupar|
+| id_fuerza_ventas -> sales_forces              |          | id_agrupacion   |
+| id_personal_superior -> staff (self-ref)      |          | des_agrupacion  |
++-------------------+---------------------------+          +-----------------+
+                    |
+                    v
++-----------------------------------------------+
+|                   routes                      |
+|                  (rutas)                      |
+|-----------------------------------------------|
+| UNIQUE(id_ruta, id_sucursal, id_fuerza_ventas)|
+| id_sucursal -> branches                       |
+| id_fuerza_ventas -> sales_forces              |
+| id_personal -> staff (el preventista asignado)|
+| dias_visita, semana_visita, periodicidad      |
+| dias_entrega, semana_entrega, periodicidad    |
+| id_modo_atencion, des_modo_atencion           |
+| fecha_desde, fecha_hasta, anulado             |
++-------------------+---------------------------+
+                    |
+        +-----------+-----------+
+        |                       |
+        v                       v
++---------------+      +--------------------+
+|    clients    |      |   client_forces    |
+|  (clientes)   |      | (asign cli-rut)    |
+|---------------|      |--------------------|
+| id_cliente    |      | UNIQUE(id_cliente, |
+| id_sucursal ->|      |  id_ruta,          |
+|   branches    |      |  fecha_inicio)     |
+| id_canal_mkt  |      | dias_visita        |
+| id_segmento   |      | semana_visita      |
+| id_subcanal   |      | periodicidad_visita|
+| latitud       |      | id_modo_atencion   |
+| longitud      |      | fecha_inicio       |
++-------+-------+      | fecha_fin          |
+        |               +--------------------+
+        |
+        v
++-------------------------------------------------------------------------+
+|                           MARKETING                                      |
+|                    (3 niveles jerarquicos)                               |
++-------------------------------------------------------------------------+
+        |
+        +-- marketing_segments (id_segmento_mkt)        <- Nivel 1
+        |         ^
+        +-- marketing_channels (id_canal_mkt)           <- Nivel 2
+        |         | FK -> segments
+        |         ^
+        +-- marketing_subchannels (id_subcanal_mkt)     <- Nivel 3
+                  | FK -> channels
+
+
+                    +---------------------------------------------+
+                    |            FACT TABLES                       |
+                    |     (dependen de todas las anteriores)       |
+                    +---------------------------------------------+
+                                        |
+        +-------------------------------+-------------------------------+
+        |                                                               |
+        v                                                               v
++-------------------------------+                      +-------------------------------+
+|         fact_ventas           |                      |         fact_stock            |
+|-------------------------------|                      |-------------------------------|
+| FKs a:                        |                      | FKs a:                        |
+| - branches (id_sucursal)      |                      | - articles (id_articulo)      |
+| - staff (vendedor, super, ger)|                      | - deposits (id_deposito)      |
+| - clients (id_cliente)        |                      |                               |
+| - articles (id_articulo)      |                      | Metricas:                     |
+| - sales_forces (id_fuerza)    |                      | - cant_bultos                 |
+| - marketing_* (canal, seg,sub)|                      | - cant_unidades               |
+|                               |                      | - fec_vto_lote                |
+| Campo calculado:              |                      |                               |
+| - facturacion_neta =          |                      | UNIQUE(date_stock,            |
+|   cant_total * ABS(precio_br) |                      |   id_deposito, id_articulo)   |
++-------------------------------+                      +-------------------------------+
+
+
+================================================================================
+                    ORDEN DE EJECUCION (POR DEPENDENCIAS)
+================================================================================
+
+Nivel 0 (sin deps)    Nivel 1           Nivel 2         Nivel 3         Nivel 4
+------------------    ---------         ---------       ---------       ---------
+1. branches      ->   3. staff      ->  4. routes   ->  5. clients  ->  fact_ventas
+2. sales_forces  /                                      6. client_forces
+7. articles      ->   8. article_groupings
+9. mkt_segments  ->   10. mkt_channels -> 11. mkt_subchannels
+                                                                        fact_stock
+
+
+================================================================================
+                    COMANDO ORCHESTRATOR (ORDEN RECOMENDADO)
+================================================================================
+
+# Silver Masters (en orden de dependencias)
+python orchestrator.py silver branches           # 1. Sucursales
+python orchestrator.py silver sales_forces       # 2. Fuerzas de venta
+python orchestrator.py silver staff              # 3. Preventistas
+python orchestrator.py silver routes             # 4. Rutas
+python orchestrator.py silver clients            # 5. Clientes
+python orchestrator.py silver client_forces      # 6. Asignaciones cliente-ruta
+python orchestrator.py silver articles           # 7. Articulos
+python orchestrator.py silver article_groupings  # 8. Agrupaciones de articulos
+python orchestrator.py silver marketing          # 9. Marketing (segmentos, canales, subcanales)
+
+# O ejecutar todos juntos:
+python orchestrator.py silver masters
+
+# Fact Tables (requieren masters cargados)
+python orchestrator.py silver sales [fecha_desde] [fecha_hasta]
+python orchestrator.py silver stock [fecha_desde] [fecha_hasta]
+
+
+================================================================================
+                    RESUMEN DE TABLAS SILVER
+================================================================================
+
+TABLA                   | FUENTE BRONZE      | UNIQUE CONSTRAINT              | FKs PRINCIPALES
+------------------------|--------------------|--------------------------------|------------------
+branches                | raw_staff          | id_sucursal                    | -
+sales_forces            | raw_staff          | id_fuerza_ventas               | -
+staff                   | raw_staff          | id_personal                    | branches, sales_forces
+routes                  | raw_routes         | id_ruta,id_sucursal,id_fza_vta | branches, sales_forces, staff
+clients                 | raw_clients        | id_cliente                     | branches
+client_forces           | raw_clients        | id_cliente,id_ruta,fecha_inicio| clients, routes
+articles                | raw_articles       | id_articulo                    | -
+article_groupings       | raw_articles       | id_articulo,id_forma_agrupar   | articles
+marketing_segments      | raw_marketing      | id_segmento_mkt                | -
+marketing_channels      | raw_marketing      | id_canal_mkt                   | segments
+marketing_subchannels   | raw_marketing      | id_subcanal_mkt                | channels
+fact_ventas             | raw_sales          | id (serial)                    | todas las anteriores
+fact_stock              | raw_stock          | date_stock,id_deposito,id_art  | articles, deposits
+
+NOTA: fact_ventas incluye campo calculado facturacion_neta = cantidades_total * ABS(precio_unitario_bruto)
+
+================================================================================
