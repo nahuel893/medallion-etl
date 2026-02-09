@@ -302,6 +302,14 @@ def gold_dim_sucursal():
     logger.info("GOLD DIM_SUCURSAL: Completado")
 
 
+def gold_dim_deposito():
+    """Carga dimensión depósito."""
+    from layers.gold.aggregators import load_dim_deposito
+    logger.info("GOLD DIM_DEPOSITO: Cargando dimensión")
+    load_dim_deposito()
+    logger.info("GOLD DIM_DEPOSITO: Completado")
+
+
 def gold_dim_vendedor():
     """Carga dimensión vendedor."""
     from layers.gold.aggregators import load_dim_vendedor
@@ -379,6 +387,7 @@ def gold_dimensions():
     logger.info("GOLD DIMENSIONS: Iniciando carga de dimensiones")
     gold_dim_tiempo()
     gold_dim_sucursal()
+    gold_dim_deposito()
     gold_dim_vendedor()
     gold_dim_articulo()
     gold_dim_cliente()
@@ -619,6 +628,9 @@ if __name__ == '__main__':
         elif entidad == 'dim_sucursal':
             gold_dim_sucursal()
 
+        elif entidad == 'dim_deposito':
+            gold_dim_deposito()
+
         elif entidad == 'dim_vendedor':
             gold_dim_vendedor()
 
@@ -668,7 +680,7 @@ if __name__ == '__main__':
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para gold")
-            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, cobertura, cob_preventista_marca, cob_sucursal_marca, cob_preventista_generico, dimensions, all")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_deposito, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, cobertura, cob_preventista_marca, cob_sucursal_marca, cob_preventista_generico, dimensions, all")
             sys.exit(1)
 
     # ==========================================

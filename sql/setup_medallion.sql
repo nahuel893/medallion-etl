@@ -591,6 +591,16 @@ CREATE TABLE IF NOT EXISTS gold.dim_sucursal (
     descripcion VARCHAR(100)
 );
 
+-- Dimensión Depósito (jerarquía: depósito → sucursal)
+CREATE TABLE IF NOT EXISTS gold.dim_deposito (
+    id_deposito INTEGER PRIMARY KEY,
+    descripcion VARCHAR(255),
+    id_sucursal INTEGER,
+    des_sucursal VARCHAR(100)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dim_deposito_sucursal ON gold.dim_deposito(id_sucursal);
+
 -- Dimensión Vendedor
 CREATE TABLE IF NOT EXISTS gold.dim_vendedor (
     id_vendedor INTEGER PRIMARY KEY,

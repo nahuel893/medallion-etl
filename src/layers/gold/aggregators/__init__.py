@@ -1,5 +1,6 @@
 from layers.gold.aggregators.dim_tiempo import load_dim_tiempo
 from layers.gold.aggregators.dim_sucursal import load_dim_sucursal
+from layers.gold.aggregators.dim_deposito import load_dim_deposito
 from layers.gold.aggregators.dim_vendedor import load_dim_vendedor
 from layers.gold.aggregators.dim_articulo import load_dim_articulo
 from layers.gold.aggregators.dim_cliente import load_dim_cliente
@@ -15,6 +16,7 @@ from layers.gold.aggregators.cobertura import (
 __all__ = [
     'load_dim_tiempo',
     'load_dim_sucursal',
+    'load_dim_deposito',
     'load_dim_vendedor',
     'load_dim_articulo',
     'load_dim_cliente',

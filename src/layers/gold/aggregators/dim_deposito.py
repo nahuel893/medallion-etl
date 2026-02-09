@@ -1,0 +1,53 @@
+"""
+Transformer para dim_deposito en Gold layer.
+Carga datos desde bronze.raw_deposits, extrayendo id_sucursal del campo sucursal.
+"""
+from database import engine
+from datetime import datetime
+from config import get_logger
+
+logger = get_logger(__name__)
+
+
+def load_dim_deposito():
+    """
+    Carga dim_deposito desde bronze.raw_deposits.
+    Parsea id_sucursal del campo sucursal (formato: "1 - CASA CENTRAL").
+    """
+    start_time = datetime.now()
+    logger.info("Cargando dim_deposito...")
+
+    with engine.connect() as conn:
+        raw_conn = conn.connection.dbapi_connection
+        cursor = raw_conn.cursor()
+
+        # Full refresh
+        cursor.execute("DELETE FROM gold.dim_deposito")
+
+        insert_query = """
+            INSERT INTO gold.dim_deposito (id_deposito, descripcion, id_sucursal, des_sucursal)
+            SELECT DISTINCT
+                rd.id_deposito,
+                rd.descripcion,
+                SPLIT_PART(rd.sucursal, ' - ', 1)::integer AS id_sucursal,
+                SPLIT_PART(rd.sucursal, ' - ', 2) AS des_sucursal
+            FROM bronze.raw_deposits rd
+            WHERE rd.id_deposito IS NOT NULL
+            ON CONFLICT (id_deposito) DO UPDATE SET
+                descripcion = EXCLUDED.descripcion,
+                id_sucursal = EXCLUDED.id_sucursal,
+                des_sucursal = EXCLUDED.des_sucursal
+        """
+
+        cursor.execute(insert_query)
+        inserted = cursor.rowcount
+
+        raw_conn.commit()
+        cursor.close()
+
+        total_time = (datetime.now() - start_time).total_seconds()
+        logger.info(f"dim_deposito completado: {inserted:,} registros en {total_time:.2f}s")
+
+
+if __name__ == '__main__':
+    load_dim_deposito()
