@@ -34,8 +34,8 @@ echo "  DATABASE: $DB_NAME"
 echo "  ETL_USER: $ETL_USER"
 echo "  READONLY_USER: $READONLY_USER"
 
-# Ruta al archivo SQL
-SQL_SCRIPT="$SCRIPT_DIR/sql/setup_medallion.sql"
+# Ruta al archivo de permisos
+SQL_PERMISSIONS="$SCRIPT_DIR/sql/permissions.sql"
 
 # ==========================================
 # 1. INSTALACIÓN DE SISTEMA
@@ -72,25 +72,28 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
 EOF
 
 # ==========================================
-# 3. EJECUCIÓN DEL MODELO MEDALLION (SQL)
+# 3. ESTRUCTURA DE LA BD (dbmate)
 # ==========================================
-echo "=== 3. Aplicando Arquitectura Medallion y Permisos ==="
+echo "=== 3. Creando estructura de la BD (dbmate) ==="
+cd "$SCRIPT_DIR"
+PGPASSWORD="$DB_PASSWORD" DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@localhost:5432/$DB_NAME?sslmode=disable" \
+    npx dbmate --migrations-dir "./sql/migrations" --no-dump-schema up
 
-# Debug: Mostrar variables que se pasan a psql
-echo "Variables a pasar a psql:"
-echo "  db_name=$DB_NAME"
+# ==========================================
+# 4. ROLES Y PERMISOS
+# ==========================================
+echo "=== 4. Aplicando roles y permisos ==="
 echo "  etl_user=$ETL_USER"
 echo "  readonly_user=$READONLY_USER"
 
-# Inyectamos las variables de bash hacia el archivo SQL
 PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" -d "$DB_NAME" \
     -v db_name="$DB_NAME" \
     -v etl_user="$ETL_USER" \
     -v etl_password="$ETL_PASSWORD" \
     -v readonly_user="$READONLY_USER" \
     -v readonly_password="$READONLY_PASSWORD" \
-    -f "$SQL_SCRIPT"
+    -f "$SQL_PERMISSIONS"
 
 echo ""
-echo "✅ Instalación Exitosa."
-echo "La arquitectura Medallion (Bronze, Silver, Gold) ha sido desplegada."
+echo "Instalacion completada."
+echo "Arquitectura Medallion (Bronze, Silver, Gold) desplegada con dbmate + permisos."

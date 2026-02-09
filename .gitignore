@@ -43,3 +43,13 @@ htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints/
+
+
+.token
+
+# Node (dbmate)
+node_modules/
+package-lock.json
+
+# Historiales exportados
+historial_*.txt

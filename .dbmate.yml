@@ -1,0 +1,6 @@
+## dbmate configuration
+## La URL se toma de DATABASE_URL en .env
+
+migrations-dir: "./sql/migrations"
+schema-file: "./sql/schema.sql"
+no-dump-schema: false
