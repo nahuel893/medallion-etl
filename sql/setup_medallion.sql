@@ -113,6 +113,15 @@ CREATE TABLE IF NOT EXISTS bronze.raw_marketing (
     data_raw JSONB
 );
 
+CREATE TABLE IF NOT EXISTS bronze.raw_hectolitros (
+    id_articulo INTEGER NOT NULL,
+    descripcion VARCHAR(255),
+    factor_hectolitros NUMERIC(12,8),
+    source_system VARCHAR(50) DEFAULT 'XLSX_HECTOLITROS',
+    loaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT raw_hectolitros_pk PRIMARY KEY (id_articulo)
+);
+
 -- Capa SILVER
 GRANT USAGE, CREATE ON SCHEMA silver TO :etl_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA silver TO :etl_user;

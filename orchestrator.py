@@ -15,6 +15,7 @@ Ejemplos:
     python orchestrator.py bronze stock 2025-01-01 2025-12-31
     python orchestrator.py bronze depositos
     python orchestrator.py bronze marketing
+    python orchestrator.py bronze hectolitros
     python orchestrator.py bronze masters                       # Todos los maestros
 
     # SILVER (orden recomendado por dependencias)
@@ -134,6 +135,14 @@ def bronze_marketing():
     logger.info("BRONZE MARKETING: Iniciando carga (full refresh)")
     load_marketing()
     logger.info("BRONZE MARKETING: Completado")
+
+
+def bronze_hectolitros():
+    """Ejecuta la carga de factores de conversión a hectolitros en Bronze (full refresh)."""
+    from layers.bronze import load_hectolitros
+    logger.info("BRONZE HECTOLITROS: Iniciando carga desde Excel (full refresh)")
+    load_hectolitros()
+    logger.info("BRONZE HECTOLITROS: Completado")
 
 
 def bronze_masters():
@@ -548,12 +557,15 @@ if __name__ == '__main__':
         elif entidad == 'marketing':
             bronze_marketing()
 
+        elif entidad == 'hectolitros':
+            bronze_hectolitros()
+
         elif entidad == 'masters':
             bronze_masters()
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para bronze")
-            logger.error("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing, masters")
+            logger.error("Entidades disponibles: sales, clientes, staff, routes, articles, stock, depositos, marketing, hectolitros, masters")
             sys.exit(1)
 
     # ==========================================

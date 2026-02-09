@@ -46,7 +46,8 @@ medallion-etl/
     │   │   ├── routes_loader.py     # Carga FV1 y FV4
     │   │   ├── articles_loader.py
     │   │   ├── depositos_loader.py
-    │   │   └── marketing_loader.py
+    │   │   ├── marketing_loader.py
+    │   │   └── hectolitros_loader.py
     │   ├── silver/transformers/
     │   │   ├── sales_transformer.py
     │   │   ├── stock_transformer.py
@@ -66,6 +67,7 @@ medallion-etl/
     │       ├── dim_vendedor.py
     │       ├── dim_articulo.py
     │       ├── dim_sucursal.py
+    │       ├── dim_deposito.py
     │       ├── dim_tiempo.py
     │       └── cobertura.py
     └── utils/
@@ -150,6 +152,7 @@ python3 orchestrator.py all 2025-01-01 2025-12-31
 | **articles** | `articles` | Full Refresh | API Chess ERP | - |
 | **marketing** | `marketing` | Full Refresh | API Chess ERP | - |
 | **depositos** | `depositos` | Full Refresh | CSV Local | - |
+| **hectolitros** | `hectolitros` | Full Refresh | Excel Local | - |
 
 ### Tipos de Carga
 
