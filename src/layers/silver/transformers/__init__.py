@@ -9,6 +9,8 @@ from layers.silver.transformers.routes_transformer import transform_routes
 from layers.silver.transformers.article_groupings_transformer import transform_article_groupings
 from layers.silver.transformers.marketing_transformer import transform_marketing, transform_marketing_segments, transform_marketing_channels, transform_marketing_subchannels
 from layers.silver.transformers.stock_transformer import transform_stock
+from layers.silver.transformers.deposits_transformer import transform_deposits
+from layers.silver.transformers.hectolitros_transformer import transform_hectolitros
 
 __all__ = [
     'transform_sales',
@@ -25,4 +27,6 @@ __all__ = [
     'transform_marketing_channels',
     'transform_marketing_subchannels',
     'transform_stock',
+    'transform_deposits',
+    'transform_hectolitros',
 ]

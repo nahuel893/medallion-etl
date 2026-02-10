@@ -59,7 +59,9 @@ medallion-etl/
     │   │   ├── branches_transformer.py
     │   │   ├── client_forces_transformer.py
     │   │   ├── sales_forces_transformer.py
-    │   │   └── marketing_transformer.py
+    │   │   ├── marketing_transformer.py
+    │   │   ├── deposits_transformer.py
+    │   │   └── hectolitros_transformer.py
     │   └── gold/aggregators/
     │       ├── fact_ventas.py
     │       ├── fact_stock.py
@@ -177,6 +179,8 @@ Convierten datos crudos JSONB de bronze a tablas tipadas y normalizadas en silve
 | client_forces_transformer | `client_forces` | Full refresh (solo FV1/FV4 vigentes) |
 | sales_forces_transformer | `sales_forces` | Full refresh |
 | marketing_transformer | `marketing_*` | Full refresh |
+| deposits_transformer | `deposits` | Full refresh |
+| hectolitros_transformer | `hectolitros` | Full refresh |
 
 ### Campos calculados en Silver
 

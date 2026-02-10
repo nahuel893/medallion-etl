@@ -1,6 +1,6 @@
 """
-Transformer para dim_deposito en Gold layer.
-Carga datos desde bronze.raw_deposits, extrayendo id_sucursal del campo sucursal.
+Aggregator para dim_deposito en Gold layer.
+Carga datos desde silver.deposits.
 """
 from database import engine
 from datetime import datetime
@@ -11,8 +11,7 @@ logger = get_logger(__name__)
 
 def load_dim_deposito():
     """
-    Carga dim_deposito desde bronze.raw_deposits.
-    Parsea id_sucursal del campo sucursal (formato: "1 - CASA CENTRAL").
+    Carga dim_deposito desde silver.deposits.
     """
     start_time = datetime.now()
     logger.info("Cargando dim_deposito...")
@@ -26,13 +25,13 @@ def load_dim_deposito():
 
         insert_query = """
             INSERT INTO gold.dim_deposito (id_deposito, descripcion, id_sucursal, des_sucursal)
-            SELECT DISTINCT
-                rd.id_deposito,
-                rd.descripcion,
-                SPLIT_PART(rd.sucursal, ' - ', 1)::integer AS id_sucursal,
-                SPLIT_PART(rd.sucursal, ' - ', 2) AS des_sucursal
-            FROM bronze.raw_deposits rd
-            WHERE rd.id_deposito IS NOT NULL
+            SELECT
+                d.id_deposito,
+                d.descripcion,
+                d.id_sucursal,
+                d.des_sucursal
+            FROM silver.deposits d
+            WHERE d.id_deposito IS NOT NULL
             ON CONFLICT (id_deposito) DO UPDATE SET
                 descripcion = EXCLUDED.descripcion,
                 id_sucursal = EXCLUDED.id_sucursal,

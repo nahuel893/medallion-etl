@@ -81,6 +81,8 @@ class TestBronzeMasters:
 class TestSilverMasters:
     """Tests para silver_masters() - orden de ejecución."""
 
+    @patch('orchestrator.silver_hectolitros')
+    @patch('orchestrator.silver_deposits')
     @patch('orchestrator.silver_marketing')
     @patch('orchestrator.silver_article_groupings')
     @patch('orchestrator.silver_articles')
@@ -92,7 +94,8 @@ class TestSilverMasters:
     @patch('orchestrator.silver_branches')
     def test_silver_masters_orden(self, mock_branches, mock_sf, mock_staff,
                                    mock_routes, mock_clientes, mock_cf,
-                                   mock_articles, mock_ag, mock_marketing):
+                                   mock_articles, mock_ag, mock_marketing,
+                                   mock_deposits, mock_hectolitros):
         """silver_masters debe ejecutar en el orden correcto de dependencias."""
         from orchestrator import silver_masters
 
@@ -106,12 +109,15 @@ class TestSilverMasters:
         mock_articles.side_effect = lambda *a, **k: call_order.append('articles')
         mock_ag.side_effect = lambda *a, **k: call_order.append('article_groupings')
         mock_marketing.side_effect = lambda *a, **k: call_order.append('marketing')
+        mock_deposits.side_effect = lambda *a, **k: call_order.append('deposits')
+        mock_hectolitros.side_effect = lambda *a, **k: call_order.append('hectolitros')
 
         silver_masters()
 
         assert call_order == [
             'branches', 'sales_forces', 'staff', 'routes',
-            'clientes', 'client_forces', 'articles', 'article_groupings', 'marketing'
+            'clientes', 'client_forces', 'articles', 'article_groupings', 'marketing',
+            'deposits', 'hectolitros'
         ]
 
 

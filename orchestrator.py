@@ -281,6 +281,22 @@ def silver_stock(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: boo
     logger.info("SILVER STOCK: Completado")
 
 
+def silver_deposits(full_refresh: bool = True):
+    """Ejecuta la transformación de depósitos a Silver."""
+    from layers.silver.transformers.deposits_transformer import transform_deposits
+    logger.info("SILVER DEPOSITS: Iniciando transformación")
+    transform_deposits(full_refresh=full_refresh)
+    logger.info("SILVER DEPOSITS: Completado")
+
+
+def silver_hectolitros(full_refresh: bool = True):
+    """Ejecuta la transformación de hectolitros a Silver."""
+    from layers.silver.transformers.hectolitros_transformer import transform_hectolitros
+    logger.info("SILVER HECTOLITROS: Iniciando transformación")
+    transform_hectolitros(full_refresh=full_refresh)
+    logger.info("SILVER HECTOLITROS: Completado")
+
+
 def silver_masters():
     """Ejecuta la transformación de todas las tablas maestras en Silver (full refresh)."""
     logger.info("SILVER MASTERS: Iniciando transformación de maestros")
@@ -293,6 +309,8 @@ def silver_masters():
     silver_articles()
     silver_article_groupings()
     silver_marketing()
+    silver_deposits()
+    silver_hectolitros()
     logger.info("SILVER MASTERS: Completado")
 
 
@@ -626,12 +644,20 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv
             silver_stock(fecha_desde, fecha_hasta, full_refresh)
 
+        elif entidad == 'deposits':
+            full_refresh = '--full-refresh' in sys.argv or True
+            silver_deposits(full_refresh)
+
+        elif entidad == 'hectolitros':
+            full_refresh = '--full-refresh' in sys.argv or True
+            silver_hectolitros(full_refresh)
+
         elif entidad == 'masters':
             silver_masters()
 
         else:
             logger.error(f"Entidad '{entidad}' no tiene transformer en silver")
-            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing, stock, masters")
+            logger.error("Entidades disponibles: sales, clients, articles, client_forces, branches, sales_forces, staff, routes, article_groupings, marketing, stock, deposits, hectolitros, masters")
             sys.exit(1)
 
     # ==========================================

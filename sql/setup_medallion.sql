@@ -570,6 +570,29 @@ CREATE INDEX IF NOT EXISTS idx_silver_stock_articulo ON silver.fact_stock(id_art
 CREATE INDEX IF NOT EXISTS idx_silver_stock_fecha_deposito ON silver.fact_stock(date_stock, id_deposito);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_silver_stock_unique ON silver.fact_stock(date_stock, id_deposito, id_articulo);
 
+CREATE TABLE IF NOT EXISTS silver.deposits (
+    id SERIAL PRIMARY KEY,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_deposito INTEGER NOT NULL,
+    descripcion VARCHAR(255),
+    id_sucursal INTEGER,
+    des_sucursal VARCHAR(100),
+    CONSTRAINT deposits_unique UNIQUE (id_deposito)
+);
+
+CREATE INDEX IF NOT EXISTS idx_silver_deposits_sucursal ON silver.deposits(id_sucursal);
+
+CREATE TABLE IF NOT EXISTS silver.hectolitros (
+    id SERIAL PRIMARY KEY,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_articulo INTEGER NOT NULL,
+    descripcion VARCHAR(255),
+    factor_hectolitros NUMERIC(12,8),
+    CONSTRAINT hectolitros_unique UNIQUE (id_articulo)
+);
+
+CREATE INDEX IF NOT EXISTS idx_silver_hectolitros_articulo ON silver.hectolitros(id_articulo);
+
 -- Capa GOLD
 GRANT USAGE, CREATE ON SCHEMA gold TO :etl_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA gold TO :etl_user;

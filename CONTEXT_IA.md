@@ -49,6 +49,8 @@ Recarga el mes actual completo de ventas en cada ejecucion, y si es dia 1-3 tamb
 | `silver.marketing_segments` | Segmentos de marketing (nivel 1) |
 | `silver.marketing_channels` | Canales de marketing (nivel 2, FK a segments) |
 | `silver.marketing_subchannels` | Subcanales de marketing (nivel 3, FK a channels) |
+| `silver.deposits` | Depositos con id_sucursal parseado |
+| `silver.hectolitros` | Factores de conversion articulo → hectolitros |
 
 ## Esquema Gold (Usar para consultas)
 
