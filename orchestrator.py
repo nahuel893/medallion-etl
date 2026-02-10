@@ -137,11 +137,16 @@ def bronze_marketing():
     logger.info("BRONZE MARKETING: Completado")
 
 
-def bronze_hectolitros():
-    """Ejecuta la carga de factores de conversión a hectolitros en Bronze (full refresh)."""
-    from layers.bronze import load_hectolitros
-    logger.info("BRONZE HECTOLITROS: Iniciando carga desde Excel (full refresh)")
-    load_hectolitros()
+def bronze_hectolitros(full_refresh: bool = False):
+    """Ejecuta la carga de factores de conversión a hectolitros en Bronze."""
+    if full_refresh:
+        from layers.bronze import load_hectolitros_full
+        logger.info("BRONZE HECTOLITROS: Iniciando carga desde Excel (full refresh)")
+        load_hectolitros_full()
+    else:
+        from layers.bronze import load_hectolitros
+        logger.info("BRONZE HECTOLITROS: Iniciando carga desde Excel (incremental)")
+        load_hectolitros()
     logger.info("BRONZE HECTOLITROS: Completado")
 
 
@@ -558,7 +563,8 @@ if __name__ == '__main__':
             bronze_marketing()
 
         elif entidad == 'hectolitros':
-            bronze_hectolitros()
+            full_refresh = '--full-refresh' in sys.argv
+            bronze_hectolitros(full_refresh)
 
         elif entidad == 'masters':
             bronze_masters()

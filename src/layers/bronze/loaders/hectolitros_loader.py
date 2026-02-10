@@ -1,6 +1,10 @@
 """
 Loader de factores de conversión a hectolitros desde archivo Excel.
 Carga data/hectolitros.xlsx en bronze.raw_hectolitros.
+
+Dos modos:
+  - load_hectolitros(): incremental, solo inserta artículos nuevos
+  - load_hectolitros_full(): full refresh, DELETE + INSERT completo
 """
 from pathlib import Path
 
@@ -14,11 +18,8 @@ logger = get_logger(__name__)
 HECTOLITROS_FILE = Path(__file__).parent.parent.parent.parent.parent / 'data' / 'hectolitros.xlsx'
 
 
-def load_hectolitros():
-    """Carga factores de conversión a hectolitros desde Excel (full refresh: DELETE + INSERT)."""
-
-    logger.info(f"Leyendo hectolitros desde: {HECTOLITROS_FILE}")
-
+def _read_excel():
+    """Lee el Excel y retorna dict {id_articulo: (id, desc, htls, source)} deduplicado."""
     wb = openpyxl.load_workbook(HECTOLITROS_FILE, data_only=True)
     ws = wb.active
 
@@ -37,7 +38,6 @@ def load_hectolitros():
             logger.debug(f"Fila omitida (dato no numérico): id={id_articulo}, htls={htls}")
             continue
 
-        # Último valor gana en caso de duplicados
         registros_dict[int(id_articulo)] = (
             int(id_articulo),
             str(descripcion) if descripcion else None,
@@ -45,12 +45,56 @@ def load_hectolitros():
             'XLSX_HECTOLITROS'
         )
 
-    registros = list(registros_dict.values())
+    wb.close()
 
     if skipped:
         logger.warning(f"Omitidas {skipped} filas con datos no numéricos")
 
-    wb.close()
+    return registros_dict
+
+
+def load_hectolitros():
+    """Carga incremental: solo inserta artículos que no existen en la tabla."""
+    logger.info(f"Leyendo hectolitros desde: {HECTOLITROS_FILE}")
+
+    registros_dict = _read_excel()
+    if not registros_dict:
+        logger.warning("Sin datos de hectolitros")
+        return
+
+    with engine.connect() as conn:
+        raw_conn = conn.connection.dbapi_connection
+        cursor = raw_conn.cursor()
+
+        # Obtener IDs existentes
+        cursor.execute("SELECT id_articulo FROM bronze.raw_hectolitros")
+        existentes = {row[0] for row in cursor.fetchall()}
+
+        nuevos = [reg for id_art, reg in registros_dict.items() if id_art not in existentes]
+
+        if not nuevos:
+            logger.info(f"Sin artículos nuevos (Excel: {len(registros_dict)}, BD: {len(existentes)})")
+            cursor.close()
+            return
+
+        query = """
+            INSERT INTO bronze.raw_hectolitros (id_articulo, descripcion, factor_hectolitros, source_system)
+            VALUES %s
+        """
+
+        execute_values(cursor, query, nuevos, template="(%s, %s, %s, %s)")
+        raw_conn.commit()
+        cursor.close()
+
+    logger.info(f"Insertados {len(nuevos)} artículos nuevos en bronze.raw_hectolitros (existentes: {len(existentes)})")
+
+
+def load_hectolitros_full():
+    """Full refresh: DELETE + INSERT completo desde Excel."""
+    logger.info(f"Leyendo hectolitros desde: {HECTOLITROS_FILE} (full refresh)")
+
+    registros_dict = _read_excel()
+    registros = list(registros_dict.values())
 
     if not registros:
         logger.warning("Sin datos de hectolitros")
@@ -71,13 +115,7 @@ def load_hectolitros():
             VALUES %s
         """
 
-        execute_values(
-            cursor,
-            query,
-            registros,
-            template="(%s, %s, %s, %s)"
-        )
-
+        execute_values(cursor, query, registros, template="(%s, %s, %s, %s)")
         raw_conn.commit()
         cursor.close()
 
