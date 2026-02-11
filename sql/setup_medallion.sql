@@ -653,7 +653,8 @@ CREATE TABLE IF NOT EXISTS gold.dim_articulo (
     generico VARCHAR(150),
     calibre VARCHAR(150),
     proveedor VARCHAR(150),
-    unidad_negocio VARCHAR(150)
+    unidad_negocio VARCHAR(150),
+    factor_hectolitros NUMERIC(12,8)
 );
 
 CREATE INDEX IF NOT EXISTS idx_dim_articulo_marca ON gold.dim_articulo(marca);

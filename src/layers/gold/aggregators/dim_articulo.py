@@ -26,7 +26,8 @@ def load_dim_articulo():
         # Pivotar agrupaciones y unir con artículos
         insert_query = """
             INSERT INTO gold.dim_articulo (
-                id_articulo, des_articulo, marca, generico, calibre, proveedor, unidad_negocio
+                id_articulo, des_articulo, marca, generico, calibre, proveedor, unidad_negocio,
+                factor_hectolitros
             )
             SELECT
                 a.id_articulo,
@@ -35,9 +36,11 @@ def load_dim_articulo():
                 MAX(CASE WHEN ag.id_forma_agrupar = 'GENERICO' THEN ag.des_agrupacion END) AS generico,
                 MAX(CASE WHEN ag.id_forma_agrupar = 'CALIBRE' THEN ag.des_agrupacion END) AS calibre,
                 MAX(CASE WHEN ag.id_forma_agrupar = 'PROVEED' THEN ag.des_agrupacion END) AS proveedor,
-                MAX(CASE WHEN ag.id_forma_agrupar = 'UNIDAD DE NEGOCIO' THEN ag.des_agrupacion END) AS unidad_negocio
+                MAX(CASE WHEN ag.id_forma_agrupar = 'UNIDAD DE NEGOCIO' THEN ag.des_agrupacion END) AS unidad_negocio,
+                MAX(h.factor_hectolitros) AS factor_hectolitros
             FROM silver.articles a
             LEFT JOIN silver.article_groupings ag ON a.id_articulo = ag.id_articulo
+            LEFT JOIN silver.hectolitros h ON a.id_articulo = h.id_articulo
             WHERE a.id_articulo IS NOT NULL
             GROUP BY a.id_articulo, a.des_articulo
             ON CONFLICT (id_articulo) DO UPDATE SET
@@ -46,7 +49,8 @@ def load_dim_articulo():
                 generico = EXCLUDED.generico,
                 calibre = EXCLUDED.calibre,
                 proveedor = EXCLUDED.proveedor,
-                unidad_negocio = EXCLUDED.unidad_negocio
+                unidad_negocio = EXCLUDED.unidad_negocio,
+                factor_hectolitros = EXCLUDED.factor_hectolitros
         """
 
         cursor.execute(insert_query)
