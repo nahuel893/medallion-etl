@@ -731,7 +731,8 @@ CREATE TABLE IF NOT EXISTS gold.fact_ventas (
     cantidades_total NUMERIC(15,4),
     subtotal_neto NUMERIC(15,4),
     subtotal_final NUMERIC(15,4),
-    bonificacion NUMERIC(8,4)
+    bonificacion NUMERIC(8,4),
+    cantidad_total_htls NUMERIC(15,4)
 );
 
 CREATE INDEX IF NOT EXISTS idx_gold_fact_fecha ON gold.fact_ventas(fecha_comprobante);

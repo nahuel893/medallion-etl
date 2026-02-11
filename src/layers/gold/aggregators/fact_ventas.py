@@ -52,26 +52,29 @@ def load_fact_ventas(fecha_desde: str = '', fecha_hasta: str = '', full_refresh:
                 id_cliente, id_articulo, id_vendedor, id_sucursal, fecha_comprobante,
                 id_documento, letra, serie, nro_doc, anulado,
                 cantidades_con_cargo, cantidades_sin_cargo, cantidades_total,
-                subtotal_neto, subtotal_final, bonificacion
+                subtotal_neto, subtotal_final, bonificacion,
+                cantidad_total_htls
             )
             SELECT
-                id_cliente,
-                id_articulo,
-                id_vendedor,
-                id_sucursal,
-                fecha_comprobante,
-                id_documento,
-                letra,
-                serie,
-                nro_doc,
-                anulado,
-                cantidades_con_cargo,
-                cantidades_sin_cargo,
-                cantidades_total,
-                subtotal_neto,
-                subtotal_final,
-                bonificacion
-            FROM silver.fact_ventas
+                fv.id_cliente,
+                fv.id_articulo,
+                fv.id_vendedor,
+                fv.id_sucursal,
+                fv.fecha_comprobante,
+                fv.id_documento,
+                fv.letra,
+                fv.serie,
+                fv.nro_doc,
+                fv.anulado,
+                fv.cantidades_con_cargo,
+                fv.cantidades_sin_cargo,
+                fv.cantidades_total,
+                fv.subtotal_neto,
+                fv.subtotal_final,
+                fv.bonificacion,
+                fv.cantidades_total * h.factor_hectolitros AS cantidad_total_htls
+            FROM silver.fact_ventas fv
+            LEFT JOIN silver.hectolitros h ON fv.id_articulo = h.id_articulo
             {where_clause}
         """
 
