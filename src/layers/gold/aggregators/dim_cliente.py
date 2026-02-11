@@ -63,7 +63,8 @@ def load_dim_cliente():
                 id_localidad, des_localidad,
                 id_provincia, des_provincia,
                 latitud, longitud,
-                id_lista_precio, des_lista_precio
+                id_lista_precio, des_lista_precio,
+                anulado
             )
             SELECT
                 c.id_cliente,
@@ -104,7 +105,10 @@ def load_dim_cliente():
 
                 -- Lista de precio
                 c.id_lista_precio,
-                c.desc_lista_precio
+                c.desc_lista_precio,
+
+                -- Estado
+                c.anulado
 
             FROM silver.clients c
             LEFT JOIN silver.branches b ON c.id_sucursal = b.id_sucursal
@@ -138,7 +142,8 @@ def load_dim_cliente():
                 latitud = EXCLUDED.latitud,
                 longitud = EXCLUDED.longitud,
                 id_lista_precio = EXCLUDED.id_lista_precio,
-                des_lista_precio = EXCLUDED.des_lista_precio
+                des_lista_precio = EXCLUDED.des_lista_precio,
+                anulado = EXCLUDED.anulado
         """
 
         cursor.execute(insert_query)

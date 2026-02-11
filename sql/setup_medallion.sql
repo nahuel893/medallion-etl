@@ -700,7 +700,8 @@ CREATE TABLE IF NOT EXISTS gold.dim_cliente (
 
     -- Lista de precio
     id_lista_precio INTEGER,
-    des_lista_precio VARCHAR(100)
+    des_lista_precio VARCHAR(100),
+    anulado BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_dim_cliente_sucursal ON gold.dim_cliente(id_sucursal);
