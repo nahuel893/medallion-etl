@@ -752,7 +752,8 @@ CREATE TABLE IF NOT EXISTS gold.fact_stock (
 
     -- Métricas
     cant_bultos NUMERIC(15,4),
-    cant_unidades NUMERIC(15,4)
+    cant_unidades NUMERIC(15,4),
+    cantidad_total_htls NUMERIC(15,4)
 );
 
 CREATE INDEX IF NOT EXISTS idx_gold_stock_fecha ON gold.fact_stock(date_stock);

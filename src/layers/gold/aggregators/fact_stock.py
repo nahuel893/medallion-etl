@@ -51,15 +51,18 @@ def load_fact_stock(fecha_desde: str = '', fecha_hasta: str = '', full_refresh: 
                 id_deposito,
                 id_articulo,
                 cant_bultos,
-                cant_unidades
+                cant_unidades,
+                cantidad_total_htls
             )
             SELECT
-                date_stock,
-                id_deposito,
-                id_articulo,
-                cant_bultos,
-                cant_unidades
-            FROM silver.fact_stock
+                fs.date_stock,
+                fs.id_deposito,
+                fs.id_articulo,
+                fs.cant_bultos,
+                fs.cant_unidades,
+                fs.cant_bultos * h.factor_hectolitros AS cantidad_total_htls
+            FROM silver.fact_stock fs
+            LEFT JOIN silver.hectolitros h ON fs.id_articulo = h.id_articulo
             {where_clause}
         """
 
