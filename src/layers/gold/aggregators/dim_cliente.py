@@ -64,6 +64,7 @@ def load_dim_cliente():
                 id_provincia, des_provincia,
                 latitud, longitud,
                 id_lista_precio, des_lista_precio,
+                telefono_fijo, telefono_movil,
                 anulado
             )
             SELECT
@@ -107,6 +108,10 @@ def load_dim_cliente():
                 c.id_lista_precio,
                 c.desc_lista_precio,
 
+                -- Teléfonos
+                c.telefono_fijo,
+                c.telefono_movil,
+
                 -- Estado
                 c.anulado
 
@@ -143,6 +148,8 @@ def load_dim_cliente():
                 longitud = EXCLUDED.longitud,
                 id_lista_precio = EXCLUDED.id_lista_precio,
                 des_lista_precio = EXCLUDED.des_lista_precio,
+                telefono_fijo = EXCLUDED.telefono_fijo,
+                telefono_movil = EXCLUDED.telefono_movil,
                 anulado = EXCLUDED.anulado
         """
 

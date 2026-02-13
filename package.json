@@ -1,5 +1,5 @@
 {
   "devDependencies": {
-    "dbmate": "^2.29.5"
+    "dbmate": "^2.30.0"
   }
 }

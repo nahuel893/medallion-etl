@@ -701,6 +701,8 @@ CREATE TABLE IF NOT EXISTS gold.dim_cliente (
     -- Lista de precio
     id_lista_precio INTEGER,
     des_lista_precio VARCHAR(100),
+    telefono_fijo VARCHAR(50),
+    telefono_movil VARCHAR(50),
     anulado BOOLEAN DEFAULT FALSE
 );
 
