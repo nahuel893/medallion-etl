@@ -58,7 +58,10 @@ def transform_staff(full_refresh: bool = True):
                 id_fuerza_ventas,
                 id_personal_superior
             )
-            SELECT DISTINCT ON (NULLIF(data_raw->>'idPersonal', '')::integer)
+            SELECT DISTINCT ON (
+                    NULLIF(data_raw->>'idPersonal', '')::integer,
+                    NULLIF(data_raw->>'idSucursal', '')::integer
+                )
                 NULLIF(data_raw->>'idPersonal', '')::integer,
                 data_raw->>'desPersonal',
                 data_raw->>'cargo',
@@ -72,8 +75,11 @@ def transform_staff(full_refresh: bool = True):
                 NULLIF(data_raw->>'idPersonalSuperior', '')::integer
             FROM bronze.raw_staff
             WHERE NULLIF(data_raw->>'idPersonal', '') IS NOT NULL
-            ORDER BY NULLIF(data_raw->>'idPersonal', '')::integer, id DESC
-            ON CONFLICT (id_personal) DO UPDATE SET
+            ORDER BY
+                NULLIF(data_raw->>'idPersonal', '')::integer,
+                NULLIF(data_raw->>'idSucursal', '')::integer,
+                id DESC
+            ON CONFLICT (id_personal, id_sucursal) DO UPDATE SET
                 des_personal = EXCLUDED.des_personal,
                 cargo = EXCLUDED.cargo,
                 tipo_venta = EXCLUDED.tipo_venta,

@@ -34,6 +34,7 @@ def load_dim_cliente():
                 FROM silver.client_forces cf
                 JOIN silver.routes r ON cf.id_ruta = r.id_ruta
                 JOIN silver.staff s ON r.id_personal = s.id_personal
+                    AND r.id_sucursal = s.id_sucursal
                 WHERE r.id_fuerza_ventas = 1
                   AND cf.fecha_fin = '9999-12-31'
                 ORDER BY cf.id_cliente, cf.fecha_inicio DESC
@@ -47,6 +48,7 @@ def load_dim_cliente():
                 FROM silver.client_forces cf
                 JOIN silver.routes r ON cf.id_ruta = r.id_ruta
                 JOIN silver.staff s ON r.id_personal = s.id_personal
+                    AND r.id_sucursal = s.id_sucursal
                 WHERE r.id_fuerza_ventas = 4
                   AND cf.fecha_fin = '9999-12-31'
                 ORDER BY cf.id_cliente, cf.fecha_inicio DESC

@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS silver.staff (
     id SERIAL PRIMARY KEY,
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    id_personal INTEGER NOT NULL UNIQUE,
+    id_personal INTEGER NOT NULL,
     des_personal VARCHAR(150),
     cargo VARCHAR(50),
     tipo_venta VARCHAR(10),
@@ -234,7 +234,9 @@ CREATE TABLE IF NOT EXISTS silver.staff (
     -- FKs
     id_sucursal INTEGER,
     id_fuerza_ventas INTEGER,
-    id_personal_superior INTEGER
+    id_personal_superior INTEGER,
+
+    UNIQUE(id_personal, id_sucursal)
 );
 
 CREATE INDEX IF NOT EXISTS idx_staff_personal ON silver.staff(id_personal);
