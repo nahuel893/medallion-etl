@@ -15,7 +15,7 @@ python-dateutil>=2.8
 python-dotenv>=1.0
 
 # === API CLIENT ===
-# chesserp>=0.1.0
+chesserp-api @ git+ssh://git@github.com/nahuel893/chesserp-py-sdk.git@v0.1.0
 
 # === TESTING ===
 pytest>=7.0
