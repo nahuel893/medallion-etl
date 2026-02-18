@@ -132,11 +132,31 @@ Ambos scripts ejecutan los mismos 4 pasos automaticamente:
 3. **Aplicar migraciones** con dbmate (crea schemas bronze/silver/gold y todas las tablas)
 4. **Aplicar roles y permisos** (etl_user, readonly_user)
 
-### 3. Instalar dependencias Python
+### 3. Crear entorno virtual e instalar dependencias
+
+El proyecto usa un entorno virtual (venv) para aislar las dependencias. Se recomienda **Python 3.12** (Arch Linux trae 3.14 por defecto, que tiene problemas de compatibilidad con algunas dependencias).
 
 ```bash
+# Crear entorno virtual (usar Python 3.12 si esta disponible)
+python3.12 -m venv venv        # Con Python 3.12 especifico
+# o: python3 -m venv venv      # Con el Python del sistema
+
+# Activar entorno virtual
+source venv/bin/activate
+
+# Instalar dependencias
 pip install -r requirements.txt
 pip install chesserp  # Cliente API (instalacion separada)
+```
+
+**Importante:** Siempre activar el venv antes de ejecutar el ETL:
+```bash
+source venv/bin/activate
+```
+
+Para crontab, usar la ruta absoluta al Python del venv:
+```bash
+0 6 * * * cd /ruta/proyecto && venv/bin/python3 daily_load.py
 ```
 
 ### 4. Verificar instalacion
@@ -184,7 +204,9 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 8. Instalar dependencias Python
+# 8. Crear venv e instalar dependencias Python
+python3.12 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 pip install chesserp
 ```
@@ -217,7 +239,9 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 7. Instalar dependencias Python
+# 7. Crear venv e instalar dependencias Python
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 pip install chesserp
 ```
@@ -322,7 +346,7 @@ Modelo dimensional (star schema) para consumo analitico.
 | `dim_tiempo` | Calendario | fecha |
 | `dim_sucursal` | Sucursales | id_sucursal |
 | `dim_deposito` | Depositos con jerarquia a sucursal | id_deposito |
-| `dim_vendedor` | Vendedores con fuerza de venta | id_vendedor |
+| `dim_vendedor` | Vendedores con fuerza de venta | (id_vendedor, id_sucursal) |
 | `dim_articulo` | Articulos con marca, generico, factor_hectolitros | id_articulo |
 | `dim_cliente` | Clientes desnormalizados con rutas FV1/FV4, marketing, telefonos | id_cliente |
 

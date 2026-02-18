@@ -292,6 +292,26 @@ GROUP BY 1, 2, 3, 4
 ORDER BY 1, 2, htls DESC;
 ```
 
+## Entorno de Desarrollo
+
+El proyecto usa un **entorno virtual (venv)** para aislar las dependencias Python.
+
+- **Python recomendado:** 3.12 (Arch Linux trae 3.14 por defecto, con problemas de compatibilidad)
+- **Crear venv:** `python3.12 -m venv venv`
+- **Activar:** `source venv/bin/activate`
+- **Instalar:** `pip install -r requirements.txt && pip install chesserp`
+- **Crontab:** usar `venv/bin/python3` (ruta absoluta al binario del venv)
+- El directorio `venv/` **no se commitea** (esta en `.gitignore`)
+
+### Scripts de instalacion de BD
+
+| Distribucion | Script |
+|---|---|
+| Arch Linux | `install_db_arch.sh` |
+| Debian/Ubuntu | `install_db_debian.sh` |
+
+Diferencia clave en Arch: requiere `initdb` para inicializar el cluster PostgreSQL y usa `dbmate` nativo (no `npx`).
+
 ## Notas Importantes
 
 1. **Usar claves compuestas**: Siempre incluir `id_sucursal` en JOINs con dim_vendedor y dim_cliente
@@ -303,6 +323,7 @@ ORDER BY 1, 2, htls DESC;
 7. **gold all incompleto**: `python3 orchestrator.py gold all` solo ejecuta dimensiones + fact_ventas. Para fact_stock y cobertura correr por separado.
 8. **client_forces sin id_sucursal**: La tabla `silver.client_forces` no tiene columna `id_sucursal`. La sucursal viene implicita de la ruta (JOIN a `silver.routes`).
 9. **email en silver.clients**: El campo `email` existe en silver.clients pero NO se propaga a gold.dim_cliente.
+10. **dim_vendedor PK compuesta**: La PK es `(id_vendedor, id_sucursal)`, no solo `id_vendedor`. Corregido en migracion `20260218200000`.
 
 ## Bronze Tables
 

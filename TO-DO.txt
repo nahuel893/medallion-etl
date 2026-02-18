@@ -1,0 +1,110 @@
+TODOs del Proyecto Medallion ETL
+
+  1. CI/CD (Prioridad Alta)
+
+  - Crear repositorio en GitHub/GitLab
+  - Configurar GitHub Actions / GitLab CI
+  - Crear pipeline de CI (lint + tests)
+  - Crear pipeline de CD (deploy a servidor)
+  - Configurar SSH keys y secretos
+
+  2. Testing (Prioridad Alta)
+
+  - Crear estructura tests/
+  - Tests unitarios para loaders (Bronze)
+  - Tests unitarios para transformers (Silver)
+  - Tests unitarios para aggregators (Gold)
+  - Tests de integración con BD de prueba
+  - Configurar pytest
+
+  3. Configuración por Ambiente
+
+  - Crear .env.example (template sin secretos)
+  - Documentar variables de ambiente
+  - Separar config local vs producción
+
+  4. Logging
+
+  - Reemplazar print() por logging
+  - Configurar niveles (DEBUG, INFO, ERROR)
+  - Log a archivo para producción
+
+  5. Scheduling (Para servidor)
+
+  - Definir frecuencia de ejecución
+  - Crear crontab o usar Airflow/Prefect
+  - Script de ejecución automática
+
+  6. Data Quality
+
+  - Validaciones post-carga en cada capa
+  - Alertas si hay datos faltantes/erróneos
+  - Métricas de calidad de datos
+
+  7. Documentación
+
+  - README.md con instrucciones de instalación
+  - Documentar flujo del ETL
+  - Diagrama de arquitectura
+
+  ---
+  ¿Cuáles quieres que prioricemos? ¿O hay alguno que ya tengas resuelto?
+
+● Recomendaciones para Tests en Medallion ETL
+
+  Estructura
+
+  tests/
+  ├── conftest.py          # Fixtures compartidos (conexión DB test, mock API)
+  ├── test_bronze/         # Tests de loaders
+  ├── test_silver/         # Tests de transformers
+  ├── test_gold/           # Tests de aggregators
+  └── test_integration/    # Tests end-to-end
+
+  Prioridad de Tests
+
+  1. Unit Tests (alta prioridad)
+  - Funciones de parsing/transformación de datos
+  - generar_rangos_mensuales() en sales_loader
+  - Lógica de fechas y conversiones de tipos
+
+  2. Integration Tests (media prioridad)
+  - Cada loader/transformer contra una DB de test
+  - Verificar que el SQL generado es correcto
+  - Usar transacciones con rollback
+
+  3. E2E Tests (baja prioridad)
+  - Pipeline completo bronze→silver→gold con datos de ejemplo
+
+  Herramientas
+
+  pytest>=7.0
+  pytest-postgresql    # DB temporal para tests
+  pytest-mock          # Mock del API client
+
+  Fixtures Clave
+
+  # conftest.py
+  @pytest.fixture
+  def mock_chess_client(mocker):
+      """Mock de ChessClient con datos de ejemplo."""
+      return mocker.patch('chesserp.client.ChessClient')
+
+  @pytest.fixture
+  def test_db():
+      """DB PostgreSQL temporal con esquemas medallion."""
+      # Setup schemas bronze/silver/gold
+      yield connection
+      # Rollback
+
+  Qué NO testear
+
+  - Queries SQL exactas (frágil)
+  - Conexiones a API real
+  - Datos de producción
+
+  Comando sugerido
+
+  pytest tests/ -v --tb=short
+
+  ¿Quieres que implemente alguno de estos tests?
