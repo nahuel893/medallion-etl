@@ -134,19 +134,32 @@ Ambos scripts ejecutan los mismos 4 pasos automaticamente:
 
 ### 3. Crear entorno virtual e instalar dependencias
 
-El proyecto usa un entorno virtual (venv) para aislar las dependencias. Se recomienda **Python 3.12** (Arch Linux trae 3.14 por defecto, que tiene problemas de compatibilidad con algunas dependencias).
+El proyecto usa un entorno virtual (venv) para aislar las dependencias.
+
+**Setup rapido (recomendado):**
 
 ```bash
-# Crear entorno virtual (usar Python 3.12 si esta disponible)
-python3.12 -m venv venv        # Con Python 3.12 especifico
-# o: python3 -m venv venv      # Con el Python del sistema
+./setup_dev.sh
+```
 
-# Activar entorno virtual
+Este script automaticamente:
+1. Clona [chesserp-py-sdk](https://github.com/nahuel893/chesserp-py-sdk) en `../chesserp-py-sdk` (si no existe)
+2. Crea el entorno virtual (`venv/`)
+3. Instala todas las dependencias + chesserp en modo editable
+
+**Setup manual:**
+
+```bash
+# Clonar chesserp (repo hermano)
+git clone git@github.com:nahuel893/chesserp-py-sdk.git ../chesserp-py-sdk
+
+# Crear entorno virtual
+python3 -m venv venv
 source venv/bin/activate
 
 # Instalar dependencias
 pip install -r requirements.txt
-pip install chesserp  # Cliente API (instalacion separada)
+pip install -e ../chesserp-py-sdk
 ```
 
 **Importante:** Siempre activar el venv antes de ejecutar el ETL:
@@ -204,11 +217,11 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 8. Crear venv e instalar dependencias Python
-python3.12 -m venv venv
+# 8. Crear venv e instalar dependencias (o usar ./setup_dev.sh)
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install chesserp
+pip install -e ../chesserp-py-sdk
 ```
 
 #### Debian/Ubuntu
@@ -239,11 +252,11 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 7. Crear venv e instalar dependencias Python
+# 7. Crear venv e instalar dependencias (o usar ./setup_dev.sh)
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install chesserp
+pip install -e ../chesserp-py-sdk
 ```
 
 ## Uso
