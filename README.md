@@ -136,31 +136,13 @@ Ambos scripts ejecutan los mismos 4 pasos automaticamente:
 
 El proyecto usa un entorno virtual (venv) para aislar las dependencias.
 
-**Setup rapido (recomendado):**
-
 ```bash
-./setup_dev.sh
-```
-
-Este script automaticamente:
-1. Clona [chesserp-py-sdk](https://github.com/nahuel893/chesserp-py-sdk) en `../chesserp-py-sdk` (si no existe)
-2. Crea el entorno virtual (`venv/`)
-3. Instala todas las dependencias + chesserp en modo editable
-
-**Setup manual:**
-
-```bash
-# Clonar chesserp (repo hermano)
-git clone git@github.com:nahuel893/chesserp-py-sdk.git ../chesserp-py-sdk
-
-# Crear entorno virtual
 python3 -m venv venv
 source venv/bin/activate
-
-# Instalar dependencias
 pip install -r requirements.txt
-pip install -e ../chesserp-py-sdk
 ```
+
+Esto instala todas las dependencias incluyendo [chesserp-api](https://pypi.org/project/chesserp-api/) desde PyPI.
 
 **Importante:** Siempre activar el venv antes de ejecutar el ETL:
 ```bash
@@ -217,11 +199,10 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 8. Crear venv e instalar dependencias (o usar ./setup_dev.sh)
+# 8. Crear venv e instalar dependencias
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install -e ../chesserp-py-sdk
 ```
 
 #### Debian/Ubuntu
@@ -252,11 +233,10 @@ psql -h localhost -U tu_usuario -d medallion_db \
     -v readonly_user="reporting_user" -v readonly_password="password_reporting" \
     -f sql/permissions.sql
 
-# 7. Crear venv e instalar dependencias (o usar ./setup_dev.sh)
+# 7. Crear venv e instalar dependencias
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install -e ../chesserp-py-sdk
 ```
 
 ## Uso

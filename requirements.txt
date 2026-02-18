@@ -15,9 +15,7 @@ python-dateutil>=2.8
 python-dotenv>=1.0
 
 # === API CLIENT ===
-# chesserp se instala por separado desde el repo local de cada entorno:
-#   Dev:    pip install -e /home/nahuel/projects/work/chesserp-py-sdk
-#   Server: pip install -e /srv/app/chesserp-api (via post-receive hook)
+chesserp-api>=0.1.0
 
 # === TESTING ===
 pytest>=7.0
