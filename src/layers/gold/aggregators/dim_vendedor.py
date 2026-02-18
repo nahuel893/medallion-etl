@@ -36,7 +36,7 @@ def load_dim_vendedor():
             FROM silver.staff s
             LEFT JOIN silver.branches b ON s.id_sucursal = b.id_sucursal
             WHERE s.id_personal IS NOT NULL
-            ON CONFLICT (id_vendedor) DO UPDATE SET
+            ON CONFLICT (id_vendedor, id_sucursal) DO UPDATE SET
                 des_vendedor = EXCLUDED.des_vendedor,
                 id_fuerza_ventas = EXCLUDED.id_fuerza_ventas,
                 id_sucursal = EXCLUDED.id_sucursal,

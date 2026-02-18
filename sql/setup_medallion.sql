@@ -637,11 +637,12 @@ CREATE INDEX IF NOT EXISTS idx_dim_deposito_sucursal ON gold.dim_deposito(id_suc
 
 -- Dimensión Vendedor
 CREATE TABLE IF NOT EXISTS gold.dim_vendedor (
-    id_vendedor INTEGER PRIMARY KEY,
+    id_vendedor INTEGER NOT NULL,
     des_vendedor VARCHAR(150),
     id_fuerza_ventas INTEGER,
-    id_sucursal INTEGER,
-    des_sucursal VARCHAR(100)
+    id_sucursal INTEGER NOT NULL,
+    des_sucursal VARCHAR(100),
+    PRIMARY KEY (id_vendedor, id_sucursal)
 );
 
 CREATE INDEX IF NOT EXISTS idx_dim_vendedor_sucursal ON gold.dim_vendedor(id_sucursal);
