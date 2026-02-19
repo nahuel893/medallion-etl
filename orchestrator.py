@@ -56,6 +56,14 @@ Ejemplos:
 """
 import sys
 from pathlib import Path
+
+# Verificar que se esté usando un entorno virtual
+if sys.prefix == sys.base_prefix:
+    print("WARNING: No se detectó un entorno virtual (venv) activo.")
+    print("         Activar con: source venv/bin/activate")
+    print("         O usar: venv/bin/python3 orchestrator.py ...")
+    sys.exit(1)
+
 from dotenv import load_dotenv
 
 # Cargar .env antes de cualquier otro import del proyecto
