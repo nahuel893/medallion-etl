@@ -299,7 +299,7 @@ El proyecto usa un **entorno virtual (venv)** para aislar las dependencias Pytho
 - **Python recomendado:** 3.12 (Arch Linux trae 3.14 por defecto, con problemas de compatibilidad)
 - **Crear venv:** `python3.12 -m venv venv`
 - **Activar:** `source venv/bin/activate`
-- **Instalar:** `pip install -r requirements.txt && pip install chesserp`
+- **Instalar:** `pip install -r requirements.txt` (incluye chesserp-api desde PyPI)
 - **Crontab:** usar `venv/bin/python3` (ruta absoluta al binario del venv)
 - El directorio `venv/` **no se commitea** (esta en `.gitignore`)
 
