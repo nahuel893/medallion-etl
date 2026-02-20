@@ -56,10 +56,15 @@ class TestCobPreventistaSQL:
         calls = _capture_sql('load_cob_preventista_marca')
         assert any('COUNT(DISTINCT' in c for c in calls)
 
-    def test_filtra_cantidades_positivas(self):
-        """Solo debe considerar ventas con cantidades > 0."""
+    def test_filtra_neto_positivo_por_cliente(self):
+        """Debe usar CTE con HAVING SUM para filtrar clientes con neto > 0."""
         calls = _capture_sql('load_cob_preventista_marca')
-        assert any('cantidades_total > 0' in c for c in calls)
+        assert any('HAVING SUM(fv.cantidades_total) > 0' in c for c in calls)
+
+    def test_usa_cte_cliente_marca(self):
+        """Debe usar CTE para agrupar por cliente antes de contar."""
+        calls = _capture_sql('load_cob_preventista_marca')
+        assert any('WITH cliente_marca AS' in c for c in calls)
 
 
 class TestCobSucursalSQL:
@@ -73,6 +78,16 @@ class TestCobSucursalSQL:
         calls = _capture_sql('load_cob_sucursal_marca')
         assert any('id_sucursal' in c for c in calls)
 
+    def test_usa_cte_cliente_marca(self):
+        """Debe usar CTE para agrupar por cliente antes de contar."""
+        calls = _capture_sql('load_cob_sucursal_marca')
+        assert any('WITH cliente_marca AS' in c for c in calls)
+
+    def test_filtra_neto_positivo_por_cliente(self):
+        """Debe usar HAVING SUM para filtrar clientes con neto > 0."""
+        calls = _capture_sql('load_cob_sucursal_marca')
+        assert any('HAVING SUM(fv.cantidades_total) > 0' in c for c in calls)
+
 
 class TestCobGenericoSQL:
     """Tests para load_cob_preventista_generico()."""
@@ -84,6 +99,16 @@ class TestCobGenericoSQL:
     def test_agrupa_por_generico(self):
         calls = _capture_sql('load_cob_preventista_generico')
         assert any('generico' in c.lower() for c in calls)
+
+    def test_usa_cte_cliente_generico(self):
+        """Debe usar CTE para agrupar por cliente antes de contar."""
+        calls = _capture_sql('load_cob_preventista_generico')
+        assert any('WITH cliente_generico AS' in c for c in calls)
+
+    def test_filtra_neto_positivo_por_cliente(self):
+        """Debe usar HAVING SUM para filtrar clientes con neto > 0."""
+        calls = _capture_sql('load_cob_preventista_generico')
+        assert any('HAVING SUM(fv.cantidades_total) > 0' in c for c in calls)
 
 
 class TestCobPeriodoHandling:

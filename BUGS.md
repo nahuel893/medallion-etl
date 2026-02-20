@@ -52,10 +52,9 @@
 **Impacto:** El campo calculado `facturacion_neta` podria estar usando `precioventabr` en vez de `precioUnitarioBruto` como dice la documentacion.
 **Solucion:** Verificar cual es el campo correcto de la API y ajustar el calculo.
 
-### BUG-009: Cobertura no filtra ventas anuladas
+### ~~BUG-009: Cobertura contaba clientes con neto negativo como compradores~~ RESUELTO
 **Archivo:** `src/layers/gold/aggregators/cobertura.py`
-**Impacto:** Ventas anuladas cuentan como cobertura (clientes compradores y volumen).
-**Solucion:** Agregar `AND fv.anulado = false` a las 3 queries de cobertura.
+**Resuelto:** 2026-02-20. Se reemplazo `WHERE fv.cantidades_total > 0` por CTE con `HAVING SUM(fv.cantidades_total) > 0` que agrupa por cliente primero. No se filtra por anulado (decision del usuario).
 
 ---
 
@@ -94,3 +93,4 @@
 | ~~UNIQUE staff~~ | `silver.staff` UNIQUE(id_personal) → UNIQUE(id_personal, id_sucursal) | `987440b` | 2026-02-14 |
 | ~~dim_cliente JOINs~~ | JOINs routes-staff sin id_sucursal en CTEs fv1/fv4 | `987440b` | 2026-02-14 |
 | ~~BUG-003 dim_vendedor PK~~ | PK (id_vendedor) → PK (id_vendedor, id_sucursal) | pendiente | 2026-02-18 |
+| ~~BUG-009 cobertura neto~~ | WHERE cantidades > 0 → CTE con HAVING SUM > 0 por cliente | pendiente | 2026-02-20 |
