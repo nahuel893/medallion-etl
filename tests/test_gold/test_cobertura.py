@@ -111,6 +111,32 @@ class TestCobGenericoSQL:
         assert any('HAVING SUM(fv.cantidades_total) > 0' in c for c in calls)
 
 
+class TestCobSucursalGenericoSQL:
+    """Tests para load_cob_sucursal_generico()."""
+
+    def test_insert_en_cob_sucursal_generico(self):
+        calls = _capture_sql('load_cob_sucursal_generico')
+        assert any('INSERT INTO gold.cob_sucursal_generico' in c for c in calls)
+
+    def test_group_by_sucursal(self):
+        calls = _capture_sql('load_cob_sucursal_generico')
+        assert any('id_sucursal' in c for c in calls)
+
+    def test_agrupa_por_generico(self):
+        calls = _capture_sql('load_cob_sucursal_generico')
+        assert any('generico' in c.lower() for c in calls)
+
+    def test_usa_cte_cliente_generico(self):
+        """Debe usar CTE para agrupar por cliente antes de contar."""
+        calls = _capture_sql('load_cob_sucursal_generico')
+        assert any('WITH cliente_generico AS' in c for c in calls)
+
+    def test_filtra_neto_positivo_por_cliente(self):
+        """Debe usar HAVING SUM para filtrar clientes con neto > 0."""
+        calls = _capture_sql('load_cob_sucursal_generico')
+        assert any('HAVING SUM(fv.cantidades_total) > 0' in c for c in calls)
+
+
 class TestCobPeriodoHandling:
     """Tests para el manejo de período."""
 
@@ -143,26 +169,30 @@ class TestCobPeriodoHandling:
 class TestCoberturaOrchestration:
     """Tests para load_cobertura() (orquestador)."""
 
-    def test_ejecuta_las_tres_tablas(self):
-        """load_cobertura debe llamar a las 3 funciones de cobertura."""
+    def test_ejecuta_las_cuatro_tablas(self):
+        """load_cobertura debe llamar a las 4 funciones de cobertura."""
         with patch('layers.gold.aggregators.cobertura.load_cob_preventista_marca') as mock_pm, \
              patch('layers.gold.aggregators.cobertura.load_cob_sucursal_marca') as mock_sm, \
-             patch('layers.gold.aggregators.cobertura.load_cob_preventista_generico') as mock_pg:
+             patch('layers.gold.aggregators.cobertura.load_cob_preventista_generico') as mock_pg, \
+             patch('layers.gold.aggregators.cobertura.load_cob_sucursal_generico') as mock_sg:
             from layers.gold.aggregators.cobertura import load_cobertura
             load_cobertura(periodo='2025-01')
 
             mock_pm.assert_called_once_with('2025-01', False)
             mock_sm.assert_called_once_with('2025-01', False)
             mock_pg.assert_called_once_with('2025-01', False)
+            mock_sg.assert_called_once_with('2025-01', False)
 
     def test_pasa_full_refresh(self):
-        """load_cobertura debe pasar full_refresh a las 3 funciones."""
+        """load_cobertura debe pasar full_refresh a las 4 funciones."""
         with patch('layers.gold.aggregators.cobertura.load_cob_preventista_marca') as mock_pm, \
              patch('layers.gold.aggregators.cobertura.load_cob_sucursal_marca') as mock_sm, \
-             patch('layers.gold.aggregators.cobertura.load_cob_preventista_generico') as mock_pg:
+             patch('layers.gold.aggregators.cobertura.load_cob_preventista_generico') as mock_pg, \
+             patch('layers.gold.aggregators.cobertura.load_cob_sucursal_generico') as mock_sg:
             from layers.gold.aggregators.cobertura import load_cobertura
             load_cobertura(full_refresh=True)
 
             mock_pm.assert_called_once_with('', True)
             mock_sm.assert_called_once_with('', True)
             mock_pg.assert_called_once_with('', True)
+            mock_sg.assert_called_once_with('', True)

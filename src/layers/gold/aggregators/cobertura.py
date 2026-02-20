@@ -267,6 +267,84 @@ def load_cob_preventista_generico(periodo: str = '', full_refresh: bool = False)
         logger.info(f"cob_preventista_generico completado: {inserted:,} registros en {total_time:.2f}s")
 
 
+def load_cob_sucursal_generico(periodo: str = '', full_refresh: bool = False):
+    """
+    Carga cobertura por Fuerza de Venta/Sucursal/Genérico.
+    """
+    start_time = datetime.now()
+    logger.info("Cargando gold.cob_sucursal_generico...")
+
+    with engine.connect() as conn:
+        raw_conn = conn.connection.dbapi_connection
+        cursor = raw_conn.cursor()
+
+        if periodo:
+            periodo_date = f"{periodo}-01"
+            logger.debug(f"Carga incremental: periodo {periodo}")
+            cursor.execute(
+                "DELETE FROM gold.cob_sucursal_generico WHERE periodo = %s::date",
+                (periodo_date,)
+            )
+            where_clause = "WHERE DATE_TRUNC('month', fv.fecha_comprobante) = %s::date"
+            params = (periodo_date,)
+        elif full_refresh:
+            logger.debug("Full refresh: eliminando todos los datos...")
+            cursor.execute("DELETE FROM gold.cob_sucursal_generico")
+            where_clause = ""
+            params = None
+        else:
+            logger.debug("Carga completa...")
+            cursor.execute("DELETE FROM gold.cob_sucursal_generico")
+            where_clause = ""
+            params = None
+
+        insert_query = f"""
+            WITH cliente_generico AS (
+                SELECT
+                    DATE_TRUNC('month', fv.fecha_comprobante)::date AS periodo,
+                    dv.id_fuerza_ventas,
+                    fv.id_sucursal,
+                    ds.descripcion AS ds_sucursal,
+                    da.generico,
+                    fv.id_cliente,
+                    SUM(fv.cantidades_total) AS total_qty
+                FROM gold.fact_ventas fv
+                JOIN gold.dim_vendedor dv ON fv.id_vendedor = dv.id_vendedor
+                    AND fv.id_sucursal = dv.id_sucursal
+                LEFT JOIN gold.dim_sucursal ds ON fv.id_sucursal = ds.id_sucursal
+                LEFT JOIN gold.dim_articulo da ON fv.id_articulo = da.id_articulo
+                {where_clause}
+                {"AND" if where_clause else "WHERE"} dv.id_fuerza_ventas IS NOT NULL
+                GROUP BY 1, 2, 3, 4, 5, fv.id_cliente
+                HAVING SUM(fv.cantidades_total) > 0
+            )
+            INSERT INTO gold.cob_sucursal_generico (
+                periodo, id_fuerza_ventas, id_sucursal, ds_sucursal, generico,
+                clientes_compradores, volumen_total
+            )
+            SELECT
+                periodo, id_fuerza_ventas, id_sucursal, ds_sucursal, generico,
+                COUNT(DISTINCT id_cliente) AS clientes_compradores,
+                SUM(total_qty) AS volumen_total
+            FROM cliente_generico
+            GROUP BY 1, 2, 3, 4, 5
+            ON CONFLICT (periodo, id_fuerza_ventas, id_sucursal, generico)
+            DO UPDATE SET
+                ds_sucursal = EXCLUDED.ds_sucursal,
+                clientes_compradores = EXCLUDED.clientes_compradores,
+                volumen_total = EXCLUDED.volumen_total
+        """
+
+        cursor.execute(insert_query, params if params else None)
+        inserted = cursor.rowcount
+
+        raw_conn.commit()
+        cursor.close()
+
+        total_time = (datetime.now() - start_time).total_seconds()
+        logger.info(f"cob_sucursal_generico completado: {inserted:,} registros en {total_time:.2f}s")
+
+
 def load_cobertura(periodo: str = '', full_refresh: bool = False):
     """
     Carga todas las tablas de cobertura.
@@ -275,6 +353,7 @@ def load_cobertura(periodo: str = '', full_refresh: bool = False):
     load_cob_preventista_marca(periodo, full_refresh)
     load_cob_sucursal_marca(periodo, full_refresh)
     load_cob_preventista_generico(periodo, full_refresh)
+    load_cob_sucursal_generico(periodo, full_refresh)
     logger.info("COBERTURA: Completado")
 
 

@@ -11,6 +11,7 @@ from layers.gold.aggregators.cobertura import (
     load_cob_preventista_marca,
     load_cob_sucursal_marca,
     load_cob_preventista_generico,
+    load_cob_sucursal_generico,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     'load_cob_preventista_marca',
     'load_cob_sucursal_marca',
     'load_cob_preventista_generico',
+    'load_cob_sucursal_generico',
 ]

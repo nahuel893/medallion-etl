@@ -44,6 +44,7 @@ Ejemplos:
     python orchestrator.py gold cob_preventista_marca [YYYY-MM]         # Por preventista/ruta/marca
     python orchestrator.py gold cob_sucursal_marca [YYYY-MM]            # Por sucursal/marca
     python orchestrator.py gold cob_preventista_generico [YYYY-MM]      # Por preventista/ruta/genérico
+    python orchestrator.py gold cob_sucursal_generico [YYYY-MM]         # Por sucursal/genérico
     python orchestrator.py gold dimensions                              # Solo dimensiones (1-5)
     python orchestrator.py gold all                                     # Todo (dimensiones + fact_ventas)
 
@@ -422,6 +423,14 @@ def gold_cob_preventista_generico(periodo: str = '', full_refresh: bool = False)
     logger.info("GOLD COB_PREVENTISTA_GENERICO: Completado")
 
 
+def gold_cob_sucursal_generico(periodo: str = '', full_refresh: bool = False):
+    """Carga cobertura por sucursal/genérico."""
+    from layers.gold.aggregators import load_cob_sucursal_generico
+    logger.info("GOLD COB_SUCURSAL_GENERICO: Cargando")
+    load_cob_sucursal_generico(periodo, full_refresh)
+    logger.info("GOLD COB_SUCURSAL_GENERICO: Completado")
+
+
 def gold_dimensions():
     """Carga solo las dimensiones (sin fact_ventas)."""
     logger.info("GOLD DIMENSIONS: Iniciando carga de dimensiones")
@@ -724,6 +733,11 @@ if __name__ == '__main__':
             full_refresh = '--full-refresh' in sys.argv
             gold_cob_preventista_generico(periodo, full_refresh)
 
+        elif entidad == 'cob_sucursal_generico':
+            periodo = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ''
+            full_refresh = '--full-refresh' in sys.argv
+            gold_cob_sucursal_generico(periodo, full_refresh)
+
         elif entidad == 'dimensions':
             gold_dimensions()
 
@@ -732,7 +746,7 @@ if __name__ == '__main__':
 
         else:
             logger.error(f"Entidad '{entidad}' no reconocida para gold")
-            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_deposito, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, cobertura, cob_preventista_marca, cob_sucursal_marca, cob_preventista_generico, dimensions, all")
+            logger.error("Entidades disponibles: dim_tiempo, dim_sucursal, dim_deposito, dim_vendedor, dim_articulo, dim_cliente, fact_ventas, fact_stock, cobertura, cob_preventista_marca, cob_sucursal_marca, cob_preventista_generico, cob_sucursal_generico, dimensions, all")
             sys.exit(1)
 
     # ==========================================
